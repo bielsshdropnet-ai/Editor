@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Editor com Preview ao Vivo</title>
+<style>
+  :root {
+    --bg: #1e1e2e;
+    --panel: #262838;
+    --text: #e8e8f0;
+    --muted: #9a9ab0;
+    --accent: #7c9eff;
+    --border: #3a3d52;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f4f5f9;
+      --panel: #ffffff;
+      --text: #1c1e2b;
+      --muted: #6b6d80;
+      --accent: #4a6bff;
+      --border: #dcdee8;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1e1e2e;
+    --panel: #262838;
+    --text: #e8e8f0;
+    --muted: #9a9ab0;
+    --accent: #7c9eff;
+    --border: #3a3d52;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    height: 100%;
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .app {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  header {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  header h1 {
+    font-size: 16px;
+    margin: 0;
+    font-weight: 600;
+  }
+  .tabs {
+    display: flex;
+    gap: 4px;
+  }
+  .tab-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .tab-btn.active {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+  .spacer { flex: 1; }
+  .upload-btn {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 7px 13px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .upload-btn:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  #upload-status {
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .main {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
+  .editor-pane, .preview-pane {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .editor-pane {
+    border-right: 1px solid var(--border);
+  }
+  .editor-box {
+    flex: 1;
+    display: none;
+  }
+  .editor-box.active {
+    display: flex;
+  }
+  textarea {
+    flex: 1;
+    width: 100%;
+    resize: none;
+    border: none;
+    outline: none;
+    background: var(--panel);
+    color: var(--text);
+    font-family: "SF Mono", Monaco, "Courier New", monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    padding: 12px;
+  }
+  .preview-pane {
+    background: var(--panel);
+  }
+  .preview-label {
+    padding: 6px 12px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+  }
+  iframe {
+    flex: 1;
+    width: 100%;
+    border: none;
+    background: white;
+  }
+  @media (max-width: 760px) {
+    .main { flex-direction: column; }
+    .editor-pane { border-right: none; border-bottom: 1px solid var(--border); }
+    .editor-pane, .preview-pane { flex: 1 1 50%; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>✏️ Editor HTML / CSS / JS — preview ao vivo</h1>
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="html">HTML</button>
+      <button class="tab-btn" data-tab="css">CSS</button>
+      <button class="tab-btn" data-tab="js">JS</button>
+    </div>
+    <div class="spacer"></div>
+    <input type="file" id="file-input" accept=".html,.htm,.css,.js" multiple style="display:none">
+    <button class="upload-btn" id="upload-btn">📂 Carregar arquivo(s)</button>
+    <span id="upload-status"></span>
+  </header>
+  <div class="main">
+    <div class="editor-pane">
+      <div class="editor-box active" data-box="html">
+        <textarea id="html-code" spellcheck="false"></textarea>
+      </div>
+      <div class="editor-box" data-box="css">
+        <textarea id="css-code" spellcheck="false"></textarea>
+      </div>
+      <div class="editor-box" data-box="js">
+        <textarea id="js-code" spellcheck="false"></textarea>
+      </div>
+    </div>
+    <div class="preview-pane">
+      <div class="preview-label">Preview</div>
+      <iframe id="preview" title="preview"></iframe>
+    </div>
+  </div>
+</div>
+
+<script>
+  const htmlEl = document.getElementById('html-code');
+  const cssEl = document.getElementById('css-code');
+  const jsEl = document.getElementById('js-code');
+  const iframe = document.getElementById('preview');
+
+  function update() {
+    const doc = `<!DOCTYPE html>
+<html>
+<head><style>${cssEl.value}</style></head>
+<body>${htmlEl.value}
+<script>${jsEl.value}<\/script>
+</body>
+</html>`;
+    iframe.srcdoc = doc;
+  }
+
+  [htmlEl, cssEl, jsEl].forEach(el => el.addEventListener('input', update));
+
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.editor-box').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelector(`.editor-box[data-box="${btn.dataset.tab}"]`).classList.add('active');
+    });
+  });
+
+  // Carregar arquivos do dispositivo
+  const fileInput = document.getElementById('file-input');
+  const uploadBtn = document.getElementById('upload-btn');
+  const uploadStatus = document.getElementById('upload-status');
+
+  uploadBtn.addEventListener('click', () => fileInput.click());
+
+  fileInput.addEventListener('change', async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+
+    let loaded = [];
+    for (const file of files) {
+      const text = await file.text();
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (ext === 'html' || ext === 'htm') {
+        htmlEl.value = text;
+        loaded.push('HTML');
+      } else if (ext === 'css') {
+        cssEl.value = text;
+        loaded.push('CSS');
+      } else if (ext === 'js') {
+        jsEl.value = text;
+        loaded.push('JS');
+      }
+    }
+
+    update();
+    uploadStatus.textContent = loaded.length
+      ? `Carregado: ${loaded.join(', ')}`
+      : 'Nenhum arquivo .html/.css/.js reconhecido';
+    setTimeout(() => { uploadStatus.textContent = ''; }, 4000);
+
+    // limpa o input para permitir carregar o mesmo arquivo de novo depois
+    fileInput.value = '';
+  });
+
+  update();
+</script>
+</body>
+</html>
