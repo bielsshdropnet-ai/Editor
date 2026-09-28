@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -21,6 +21,15 @@
     --bg: #1e1e2e; --panel: #262838; --text: #e8e8f0; --muted: #9a9ab0;
     --accent: #7c9eff; --border: #3a3d52;
   }
+  .cm-comment { color: #6a9955; font-style: italic; }
+  .cm-string  { color: #ce9178; }
+  .cm-keyword { color: #c586c0; }
+  .cm-tag     { color: #569cd6; }
+  .cm-attr    { color: #9cdcfe; }
+  .cm-number  { color: #b5cea8; }
+  .cm-prop    { color: #9cdcfe; }
+  .cm-selector{ color: #d7ba7d; }
+  .cm-func    { color: #dcdcaa; }
   * { box-sizing: border-box; }
   html, body {
     height: 100%; margin: 0; background: var(--bg); color: var(--text);
@@ -86,12 +95,14 @@
   .mirror, textarea {
     position: absolute; inset: 0; margin: 0; padding: 12px; border: none; white-space: pre;
   }
-  .mirror { overflow: hidden; color: transparent; pointer-events: none; }
+  .mirror { overflow: hidden; color: var(--text); pointer-events: none; }
   .mirror mark { background: var(--hl); color: transparent; border-radius: 2px; }
   .mirror mark.cur { background: var(--hlcur); }
+  body.searching .mirror { color: transparent; }
+  body.searching textarea { color: var(--text); }
   textarea {
     width: 100%; height: 100%; resize: none; outline: none; overflow: auto;
-    background: transparent; color: var(--text);
+    background: transparent; color: transparent; caret-color: var(--text);
   }
 
   /* Divisor arrastável */
@@ -271,6 +282,49 @@
 
   /* ---------- Busca ---------- */
   const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+
+  const RULES = {
+    html: [
+      { cls: 'cm-comment', re: /<!--[\s\S]*?-->/ },
+      { cls: 'cm-string',  re: /"[^"]*"|'[^']*'/ },
+      { cls: 'cm-tag',     re: /<\/?[a-zA-Z][a-zA-Z0-9-]*/ },
+      { cls: 'cm-attr',    re: /[a-zA-Z-:]+(?=\s*=)/ },
+      { cls: 'cm-func',    re: /\/?>/ },
+    ],
+    css: [
+      { cls: 'cm-comment',  re: /\/\*[\s\S]*?\*\// },
+      { cls: 'cm-string',   re: /"[^"]*"|'[^']*'/ },
+      { cls: 'cm-prop',     re: /[a-zA-Z-]+(?=\s*:)/ },
+      { cls: 'cm-number',   re: /-?\d*\.?\d+(px|em|rem|%|vh|vw|s|ms|deg)?/ },
+      { cls: 'cm-selector', re: /[.#][a-zA-Z][a-zA-Z0-9_-]*/ },
+    ],
+    js: [
+      { cls: 'cm-comment', re: /\/\/[^\n]*|\/\*[\s\S]*?\*\// },
+      { cls: 'cm-string',  re: /`(?:\\.|[^`\\])*`|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/ },
+      { cls: 'cm-keyword', re: /\b(const|let|var|function|return|if|else|for|while|do|switch|case|break|continue|new|class|extends|try|catch|finally|throw|typeof|instanceof|in|of|null|undefined|true|false|this|async|await|import|export|default|from|static|get|set|yield|delete|void)\b/ },
+      { cls: 'cm-number',  re: /\b\d+\.?\d*\b/ },
+      { cls: 'cm-func',    re: /[a-zA-Z_$][\w$]*(?=\()/ },
+    ],
+  };
+  const RX = {};
+  Object.keys(RULES).forEach(lang => {
+    RX[lang] = new RegExp(RULES[lang].map(r => '(' + r.re.source + ')').join('|'), 'g');
+  });
+  function highlight(lang, text) {
+    const rx = RX[lang];
+    rx.lastIndex = 0;
+    let out = '', last = 0, m;
+    while ((m = rx.exec(text))) {
+      if (m.index > last) out += esc(text.slice(last, m.index));
+      let gi = -1;
+      for (let i = 1; i < m.length; i++) if (m[i] !== undefined) { gi = i - 1; break; }
+      out += `<span class="${RULES[lang][gi].cls}">` + esc(m[0]) + '</span>';
+      last = rx.lastIndex;
+      if (m[0] === '') rx.lastIndex++;
+    }
+    out += esc(text.slice(last));
+    return out;
+  }
   const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const findbar = $('findbar'), find = $('find'), rep = $('rep'), cs = $('cs');
 
@@ -283,16 +337,24 @@
   }
   function paint() {
     const q = find.value;
+    const searching = !findbar.hidden && !!q;
+    document.body.classList.toggle('searching', searching);
     TABS.forEach(t => {
       const text = E[t].ta.value, list = M[t];
-      if (!list.length) { E[t].mir.innerHTML = ''; return; }
-      let html = '', last = 0;
-      list.forEach((i, k) => {
-        html += esc(text.slice(last, i)) +
-          `<mark${t === tab && k === cur ? ' class="cur"' : ''}>` + esc(text.slice(i, i + q.length)) + '</mark>';
-        last = i + q.length;
-      });
-      E[t].mir.innerHTML = html + esc(text.slice(last)) + '\n ';
+      if (searching) {
+        if (!list.length) { E[t].mir.innerHTML = ''; }
+        else {
+          let html = '', last = 0;
+          list.forEach((i, k) => {
+            html += esc(text.slice(last, i)) +
+              `<mark${t === tab && k === cur ? ' class="cur"' : ''}>` + esc(text.slice(i, i + q.length)) + '</mark>';
+            last = i + q.length;
+          });
+          E[t].mir.innerHTML = html + esc(text.slice(last)) + '\n ';
+        }
+      } else {
+        E[t].mir.innerHTML = highlight(t, text) + '\n ';
+      }
       E[t].mir.scrollTop = E[t].ta.scrollTop; E[t].mir.scrollLeft = E[t].ta.scrollLeft;
     });
   }
@@ -538,6 +600,7 @@
     if (s) TABS.forEach(t => { E[t].ta.value = s[t] || ''; });
   } catch (e) {}
   TABS.forEach(gutter);
+  refresh();
   $('st-len').textContent = E.html.ta.value.length + ' caracteres';
   update();
   fitZoom();
