@@ -3,151 +3,108 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Editor com Preview ao Vivo</title>
+<title>Editor HTML / CSS / JS</title>
 <style>
   :root {
-    --bg: #1e1e2e;
-    --panel: #262838;
-    --text: #e8e8f0;
-    --muted: #9a9ab0;
-    --accent: #7c9eff;
-    --border: #3a3d52;
+    --bg: #1e1e2e; --panel: #262838; --text: #e8e8f0; --muted: #9a9ab0;
+    --accent: #7c9eff; --border: #3a3d52;
+    --hl: rgba(255,214,102,.30); --hlcur: rgba(255,140,60,.65);
   }
   @media (prefers-color-scheme: light) {
     :root:not([data-theme="dark"]) {
-      --bg: #f4f5f9;
-      --panel: #ffffff;
-      --text: #1c1e2b;
-      --muted: #6b6d80;
-      --accent: #4a6bff;
-      --border: #dcdee8;
+      --bg: #f4f5f9; --panel: #ffffff; --text: #1c1e2b; --muted: #6b6d80;
+      --accent: #4a6bff; --border: #dcdee8;
+      --hl: rgba(255,200,0,.35); --hlcur: rgba(255,120,30,.55);
     }
   }
   :root[data-theme="dark"] {
-    --bg: #1e1e2e;
-    --panel: #262838;
-    --text: #e8e8f0;
-    --muted: #9a9ab0;
-    --accent: #7c9eff;
-    --border: #3a3d52;
+    --bg: #1e1e2e; --panel: #262838; --text: #e8e8f0; --muted: #9a9ab0;
+    --accent: #7c9eff; --border: #3a3d52;
   }
   * { box-sizing: border-box; }
   html, body {
-    height: 100%;
-    margin: 0;
-    background: var(--bg);
-    color: var(--text);
+    height: 100%; margin: 0; background: var(--bg); color: var(--text);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     padding-top: env(safe-area-inset-top, 0px);
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
-  .app {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-  }
+  button, input { font: inherit; color: inherit; }
+  button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .app { display: flex; flex-direction: column; height: 100%; }
+
   header {
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    flex-wrap: wrap;
+    padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--panel);
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
   }
-  header h1 {
-    font-size: 16px;
-    margin: 0;
-    font-weight: 600;
-  }
-  .tabs {
-    display: flex;
-    gap: 4px;
-  }
+  header h1 { font-size: 15px; margin: 0; font-weight: 600; }
+  .tabs { display: flex; gap: 4px; }
   .tab-btn {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--muted);
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-size: 13px;
-    cursor: pointer;
+    background: transparent; border: 1px solid var(--border); color: var(--muted);
+    padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
   }
-  .tab-btn.active {
-    background: var(--accent);
-    color: white;
-    border-color: var(--accent);
+  .tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .badge {
+    background: var(--hlcur); color: var(--text); border-radius: 9px;
+    font-size: 11px; line-height: 16px; min-width: 18px; padding: 0 5px; text-align: center;
   }
+  .badge:empty { display: none; }
   .spacer { flex: 1; }
-  .upload-btn {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 7px 13px;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
+  .btn {
+    background: var(--bg); border: 1px solid var(--border); color: var(--text);
+    padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer;
   }
-  .upload-btn:hover {
-    border-color: var(--accent);
-    color: var(--accent);
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  #upload-status { font-size: 12px; color: var(--muted); }
+
+  .findbar {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+    padding: 8px 16px; border-bottom: 1px solid var(--border); background: var(--panel);
   }
-  #upload-status {
-    font-size: 12px;
-    color: var(--muted);
+  .findbar[hidden] { display: none; }
+  .findbar input[type=search], .findbar input[type=text] {
+    flex: 1 1 150px; min-width: 0; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 6px; padding: 6px 10px; font-size: 13px;
   }
-  .main {
-    flex: 1;
-    display: flex;
-    min-height: 0;
+  .chk { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
+  #find-info { font-size: 12px; color: var(--muted); min-width: 84px; }
+  .icon-btn { padding: 6px 10px; }
+
+  .main { flex: 1; display: flex; min-height: 0; }
+  .editor-pane, .preview-pane { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .editor-pane { border-right: 1px solid var(--border); }
+  .editor-box { flex: 1; display: none; min-height: 0; background: var(--panel); }
+  .editor-box.active { display: flex; }
+  .gutter {
+    width: 44px; flex: none; overflow: hidden; white-space: pre; text-align: right;
+    padding: 12px 8px; color: var(--muted); border-right: 1px solid var(--border); user-select: none;
   }
-  .editor-pane, .preview-pane {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
+  .code { flex: 1; position: relative; min-width: 0; }
+  .gutter, .mirror, textarea {
+    font-family: "SF Mono", Monaco, Consolas, "Courier New", monospace;
+    font-size: 13px; line-height: 20px; tab-size: 2;
   }
-  .editor-pane {
-    border-right: 1px solid var(--border);
+  .mirror, textarea {
+    position: absolute; inset: 0; margin: 0; padding: 12px; border: none; white-space: pre;
   }
-  .editor-box {
-    flex: 1;
-    display: none;
-  }
-  .editor-box.active {
-    display: flex;
-  }
+  .mirror { overflow: hidden; color: transparent; pointer-events: none; }
+  .mirror mark { background: var(--hl); color: transparent; border-radius: 2px; }
+  .mirror mark.cur { background: var(--hlcur); }
   textarea {
-    flex: 1;
-    width: 100%;
-    resize: none;
-    border: none;
-    outline: none;
-    background: var(--panel);
-    color: var(--text);
-    font-family: "SF Mono", Monaco, "Courier New", monospace;
-    font-size: 13px;
-    line-height: 1.5;
-    padding: 12px;
+    width: 100%; height: 100%; resize: none; outline: none; overflow: auto;
+    background: transparent; color: var(--text);
   }
-  .preview-pane {
-    background: var(--panel);
+
+  .preview-pane { background: var(--panel); }
+  .preview-label { padding: 6px 12px; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--border); }
+  iframe { flex: 1; width: 100%; border: none; background: white; }
+
+  .status {
+    display: flex; gap: 16px; padding: 4px 16px; font-size: 12px; color: var(--muted);
+    border-top: 1px solid var(--border); background: var(--panel);
   }
-  .preview-label {
-    padding: 6px 12px;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--muted);
-    border-bottom: 1px solid var(--border);
-  }
-  iframe {
-    flex: 1;
-    width: 100%;
-    border: none;
-    background: white;
-  }
+  .status .spacer { flex: 1; }
+
   @media (max-width: 760px) {
     .main { flex-direction: column; }
     .editor-pane { border-right: none; border-bottom: 1px solid var(--border); }
@@ -158,101 +115,263 @@
 <body>
 <div class="app">
   <header>
-    <h1>✏️ Editor HTML / CSS / JS — preview ao vivo</h1>
+    <h1>Editor HTML / CSS / JS</h1>
     <div class="tabs">
-      <button class="tab-btn active" data-tab="html">HTML</button>
-      <button class="tab-btn" data-tab="css">CSS</button>
-      <button class="tab-btn" data-tab="js">JS</button>
+      <button class="tab-btn active" data-tab="html">HTML<span class="badge" id="b-html"></span></button>
+      <button class="tab-btn" data-tab="css">CSS<span class="badge" id="b-css"></span></button>
+      <button class="tab-btn" data-tab="js">JS<span class="badge" id="b-js"></span></button>
     </div>
     <div class="spacer"></div>
     <input type="file" id="file-input" accept=".html,.htm,.css,.js" multiple style="display:none">
-    <button class="upload-btn" id="upload-btn">📂 Carregar arquivo(s)</button>
+    <button class="btn" id="find-btn" title="Buscar (Ctrl+F)">Buscar</button>
+    <button class="btn" id="upload-btn">Carregar arquivo(s)</button>
+    <button class="btn" id="download-btn">Baixar HTML</button>
     <span id="upload-status"></span>
   </header>
+
+  <div class="findbar" id="findbar" hidden>
+    <input id="find" type="search" placeholder="Buscar no código" aria-label="Buscar no código" autocomplete="off">
+    <input id="rep" type="text" placeholder="Substituir por" aria-label="Substituir por" autocomplete="off">
+    <label class="chk"><input type="checkbox" id="cs"> Maiúsc./minúsc.</label>
+    <span id="find-info" aria-live="polite"></span>
+    <button class="btn icon-btn" id="prev" aria-label="Resultado anterior">↑</button>
+    <button class="btn icon-btn" id="next" aria-label="Próximo resultado">↓</button>
+    <button class="btn" id="rep1">Substituir</button>
+    <button class="btn" id="repall">Substituir tudo</button>
+    <button class="btn icon-btn" id="close-find" aria-label="Fechar busca">✕</button>
+  </div>
+
   <div class="main">
     <div class="editor-pane">
       <div class="editor-box active" data-box="html">
-        <textarea id="html-code" spellcheck="false"></textarea>
+        <div class="gutter" id="html-gut"></div>
+        <div class="code"><pre class="mirror" id="html-mir" aria-hidden="true"></pre><textarea id="html-code" spellcheck="false" wrap="off"></textarea></div>
       </div>
       <div class="editor-box" data-box="css">
-        <textarea id="css-code" spellcheck="false"></textarea>
+        <div class="gutter" id="css-gut"></div>
+        <div class="code"><pre class="mirror" id="css-mir" aria-hidden="true"></pre><textarea id="css-code" spellcheck="false" wrap="off"></textarea></div>
       </div>
       <div class="editor-box" data-box="js">
-        <textarea id="js-code" spellcheck="false"></textarea>
+        <div class="gutter" id="js-gut"></div>
+        <div class="code"><pre class="mirror" id="js-mir" aria-hidden="true"></pre><textarea id="js-code" spellcheck="false" wrap="off"></textarea></div>
       </div>
     </div>
     <div class="preview-pane">
-      <div class="preview-label">Preview</div>
+      <div class="preview-label">Preview ao vivo</div>
       <iframe id="preview" title="preview"></iframe>
     </div>
+  </div>
+
+  <div class="status">
+    <span id="st-pos">Ln 1, Col 1</span>
+    <span id="st-len">0 caracteres</span>
+    <span class="spacer"></span>
+    <span id="st-save"></span>
   </div>
 </div>
 
 <script>
-  const htmlEl = document.getElementById('html-code');
-  const cssEl = document.getElementById('css-code');
-  const jsEl = document.getElementById('js-code');
-  const iframe = document.getElementById('preview');
+  const $ = id => document.getElementById(id);
+  const TABS = ['html', 'css', 'js'];
+  const E = {};
+  TABS.forEach(t => { E[t] = { ta: $(t + '-code'), mir: $(t + '-mir'), gut: $(t + '-gut'), n: 0 }; });
+  const iframe = $('preview');
+  let tab = 'html', cur = 0, M = { html: [], css: [], js: [] };
+  const STORE = 'editor-html-v1';
 
-  function update() {
-    const doc = `<!DOCTYPE html>
+  /* ---------- Preview ---------- */
+  function buildDoc() {
+    return `<!DOCTYPE html>
 <html>
-<head><style>${cssEl.value}</style></head>
-<body>${htmlEl.value}
-<script>${jsEl.value}<\/script>
+<head><style>${E.css.ta.value}</style></head>
+<body>${E.html.ta.value}
+<script>${E.js.ta.value}<\/script>
 </body>
 </html>`;
-    iframe.srcdoc = doc;
+  }
+  function update() { iframe.srcdoc = buildDoc(); }
+
+  /* ---------- Numeração de linhas ---------- */
+  function gutter(t) {
+    const n = E[t].ta.value.split('\n').length;
+    if (E[t].n !== n) {
+      E[t].gut.textContent = Array.from({ length: n }, (_, i) => i + 1).join('\n');
+      E[t].n = n;
+    }
+    E[t].gut.scrollTop = E[t].ta.scrollTop;
   }
 
-  [htmlEl, cssEl, jsEl].forEach(el => el.addEventListener('input', update));
+  /* ---------- Busca ---------- */
+  const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const findbar = $('findbar'), find = $('find'), rep = $('rep'), cs = $('cs');
 
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.editor-box').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      document.querySelector(`.editor-box[data-box="${btn.dataset.tab}"]`).classList.add('active');
+  function scan(text, q) {
+    const hay = cs.checked ? text : text.toLowerCase();
+    const needle = cs.checked ? q : q.toLowerCase();
+    const out = []; let i = 0;
+    while ((i = hay.indexOf(needle, i)) > -1) { out.push(i); i += needle.length; }
+    return out;
+  }
+  function paint() {
+    const q = find.value;
+    TABS.forEach(t => {
+      const text = E[t].ta.value, list = M[t];
+      if (!list.length) { E[t].mir.innerHTML = ''; return; }
+      let html = '', last = 0;
+      list.forEach((i, k) => {
+        html += esc(text.slice(last, i)) +
+          `<mark${t === tab && k === cur ? ' class="cur"' : ''}>` + esc(text.slice(i, i + q.length)) + '</mark>';
+        last = i + q.length;
+      });
+      E[t].mir.innerHTML = html + esc(text.slice(last)) + '\n ';
+      E[t].mir.scrollTop = E[t].ta.scrollTop; E[t].mir.scrollLeft = E[t].ta.scrollLeft;
     });
+  }
+  function refresh() {
+    const q = find.value, open = !findbar.hidden;
+    TABS.forEach(t => {
+      M[t] = (open && q) ? scan(E[t].ta.value, q) : [];
+      $('b-' + t).textContent = M[t].length || '';
+    });
+    const n = M[tab].length;
+    if (cur >= n) cur = n - 1;
+    if (cur < 0 && n) cur = 0;
+    $('find-info').textContent = !q ? '' : n ? `${cur + 1} de ${n}` : 'Sem resultados aqui';
+    paint();
+  }
+  function reveal() {
+    if (cur < 0 || !M[tab].length) return;
+    const t = E[tab].ta, i = M[tab][cur], before = t.value.slice(0, i);
+    const line = (before.match(/\n/g) || []).length, col = i - before.lastIndexOf('\n') - 1;
+    t.scrollTop = Math.max(0, line * 20 - t.clientHeight / 2);
+    t.scrollLeft = col * 7.8 > t.clientWidth - 60 ? col * 7.8 - t.clientWidth / 2 : 0;
+  }
+  function go(dir) {
+    const n = M[tab].length;
+    if (!n) return;
+    cur = (cur + dir + n) % n;
+    refresh(); reveal();
+  }
+  function insert(t, s) {
+    t.focus();
+    if (!document.execCommand('insertText', false, s)) {
+      t.setRangeText(s, t.selectionStart, t.selectionEnd, 'end');
+      t.dispatchEvent(new Event('input'));
+    }
+  }
+  function replaceOne() {
+    const n = M[tab].length;
+    if (!n || cur < 0) return;
+    const t = E[tab].ta, i = M[tab][cur];
+    t.focus(); t.setSelectionRange(i, i + find.value.length);
+    insert(t, rep.value);
+    refresh(); reveal();
+  }
+  function replaceAll() {
+    const q = find.value, n = M[tab].length;
+    if (!q || !n) return;
+    const t = E[tab].ta;
+    const nv = t.value.replace(new RegExp(escRe(q), cs.checked ? 'g' : 'gi'), () => rep.value);
+    t.focus(); t.select(); insert(t, nv);
+    flash(`${n} substituições em ${tab.toUpperCase()}`);
+  }
+  function openFind() {
+    findbar.hidden = false;
+    const t = E[tab].ta, sel = t.value.slice(t.selectionStart, t.selectionEnd);
+    if (sel && !sel.includes('\n')) find.value = sel;
+    find.focus(); find.select(); refresh();
+  }
+  function closeFind() { findbar.hidden = true; refresh(); E[tab].ta.focus(); }
+
+  $('find-btn').onclick = () => findbar.hidden ? openFind() : closeFind();
+  $('close-find').onclick = closeFind;
+  $('next').onclick = () => go(1);
+  $('prev').onclick = () => go(-1);
+  $('rep1').onclick = replaceOne;
+  $('repall').onclick = replaceAll;
+  find.addEventListener('input', () => { cur = 0; refresh(); reveal(); });
+  cs.addEventListener('change', () => { cur = 0; refresh(); reveal(); });
+  find.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); go(e.shiftKey ? -1 : 1); } });
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') { e.preventDefault(); openFind(); }
+    else if (e.key === 'Escape' && !findbar.hidden) closeFind();
   });
 
-  // Carregar arquivos do dispositivo
-  const fileInput = document.getElementById('file-input');
-  const uploadBtn = document.getElementById('upload-btn');
-  const uploadStatus = document.getElementById('upload-status');
+  /* ---------- Edição ---------- */
+  let saveTimer;
+  function flash(msg) { $('st-save').textContent = msg; }
+  function save() {
+    try {
+      localStorage.setItem(STORE, JSON.stringify({ html: E.html.ta.value, css: E.css.ta.value, js: E.js.ta.value }));
+      flash('Salvo automaticamente');
+    } catch (e) { flash(''); }
+  }
+  function edited(t) {
+    gutter(t); refresh(); update();
+    $('st-len').textContent = E[tab].ta.value.length + ' caracteres';
+    flash('Editando…'); clearTimeout(saveTimer); saveTimer = setTimeout(save, 500);
+  }
+  TABS.forEach(t => {
+    const ta = E[t].ta;
+    ta.addEventListener('input', () => edited(t));
+    ta.addEventListener('scroll', () => {
+      E[t].mir.scrollTop = ta.scrollTop; E[t].mir.scrollLeft = ta.scrollLeft; E[t].gut.scrollTop = ta.scrollTop;
+    });
+    ta.addEventListener('keydown', e => {
+      if (e.key === 'Tab' && !e.shiftKey) { e.preventDefault(); insert(ta, '  '); }
+    });
+  });
+  document.addEventListener('selectionchange', () => {
+    const t = document.activeElement;
+    if (!t || t.tagName !== 'TEXTAREA') return;
+    const before = t.value.slice(0, t.selectionStart);
+    $('st-pos').textContent = `Ln ${before.split('\n').length}, Col ${before.length - before.lastIndexOf('\n')}`;
+  });
 
-  uploadBtn.addEventListener('click', () => fileInput.click());
+  /* ---------- Abas ---------- */
+  function setTab(name) {
+    tab = name; cur = 0;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+    document.querySelectorAll('.editor-box').forEach(b => b.classList.toggle('active', b.dataset.box === name));
+    $('st-len').textContent = E[name].ta.value.length + ' caracteres';
+    gutter(name); refresh();
+  }
+  document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => setTab(btn.dataset.tab)));
 
-  fileInput.addEventListener('change', async (e) => {
+  /* ---------- Carregar / baixar ---------- */
+  const fileInput = $('file-input'), uploadStatus = $('upload-status');
+  $('upload-btn').addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', async e => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
-
-    let loaded = [];
+    const loaded = [];
     for (const file of files) {
       const text = await file.text();
       const ext = file.name.split('.').pop().toLowerCase();
-      if (ext === 'html' || ext === 'htm') {
-        htmlEl.value = text;
-        loaded.push('HTML');
-      } else if (ext === 'css') {
-        cssEl.value = text;
-        loaded.push('CSS');
-      } else if (ext === 'js') {
-        jsEl.value = text;
-        loaded.push('JS');
-      }
+      const key = ext === 'html' || ext === 'htm' ? 'html' : ext === 'css' ? 'css' : ext === 'js' ? 'js' : null;
+      if (key) { E[key].ta.value = text; loaded.push(key.toUpperCase()); gutter(key); }
     }
-
-    update();
-    uploadStatus.textContent = loaded.length
-      ? `Carregado: ${loaded.join(', ')}`
-      : 'Nenhum arquivo .html/.css/.js reconhecido';
+    refresh(); update(); save();
+    uploadStatus.textContent = loaded.length ? `Carregado: ${loaded.join(', ')}` : 'Nenhum arquivo .html/.css/.js reconhecido';
     setTimeout(() => { uploadStatus.textContent = ''; }, 4000);
-
-    // limpa o input para permitir carregar o mesmo arquivo de novo depois
     fileInput.value = '';
   });
+  $('download-btn').addEventListener('click', () => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([buildDoc()], { type: 'text/html' }));
+    a.download = 'pagina.html';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
 
+  /* ---------- Início ---------- */
+  try {
+    const s = JSON.parse(localStorage.getItem(STORE) || 'null');
+    if (s) TABS.forEach(t => { E[t].ta.value = s[t] || ''; });
+  } catch (e) {}
+  TABS.forEach(gutter);
+  $('st-len').textContent = E.html.ta.value.length + ' caracteres';
   update();
 </script>
 </body>
