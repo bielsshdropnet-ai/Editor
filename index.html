@@ -71,8 +71,7 @@
   .icon-btn { padding: 6px 10px; }
 
   .main { flex: 1; display: flex; min-height: 0; }
-  .editor-pane, .preview-pane { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-  .editor-pane { border-right: 1px solid var(--border); }
+  .editor-pane { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
   .editor-box { flex: 1; display: none; min-height: 0; background: var(--panel); }
   .editor-box.active { display: flex; }
   .gutter {
@@ -95,19 +94,42 @@
     background: transparent; color: var(--text);
   }
 
-  .preview-pane { background: var(--panel); }
-  .preview-label { padding: 6px 12px; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--border); }
-  .preview-pane { flex: 0 0 440px; border-left: 1px solid var(--border); }
-  .stage { flex: 1; min-height: 0; display: flex; overflow: auto; padding: 16px; background: var(--bg); }
+  /* Divisor arrastável */
+  .divider {
+    flex: none; width: 10px; cursor: col-resize; touch-action: none;
+    background: var(--panel); border-left: 1px solid var(--border); border-right: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .divider::after { content: ""; width: 4px; height: 40px; border-radius: 2px; background: var(--muted); opacity: .6; }
+  .divider:hover::after, .divider.drag::after { background: var(--accent); opacity: 1; }
+  body.dragging { user-select: none; }
+  body.dragging iframe { pointer-events: none; }
+
+  .preview-pane {
+    flex: 0 0 440px; min-width: 0; min-height: 0; display: flex; background: var(--bg); overflow: hidden;
+  }
+  .stage { flex: 1; min-width: 0; min-height: 0; display: flex; overflow: hidden; }
+
+  /* Celular */
   .phone {
-    flex: none; margin: auto; width: 395px; height: 832px; display: flex; overflow: hidden;
-    background: #000; border: 10px solid #0b0b12; border-radius: 40px;
+    flex: none; margin: auto; width: 395px; height: 832px; display: flex; flex-direction: column; overflow: hidden;
+    background: #000; border: 8px solid #0b0b12; border-radius: 40px;
     box-shadow: 0 0 0 1px var(--border), 0 12px 32px rgba(0,0,0,.35);
   }
-  .preview-label { display: flex; align-items: center; gap: 8px; }
-  .preview-label .btn { padding: 3px 10px; font-size: 13px; }
-  #z-val { font-size: 12px; min-width: 40px; text-align: center; }
-  iframe { flex: 1; width: 100%; border: none; background: white; }
+  .sbar {
+    flex: none; height: 30px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between;
+    background: #000; color: #fff; font-size: 12px; font-weight: 500; user-select: none;
+  }
+  .sbar .l, .sbar .r { display: flex; align-items: center; gap: 6px; }
+  .sbar svg { display: block; fill: #fff; }
+  .sbar .op { opacity: .85; }
+  .nbar {
+    flex: none; height: 46px; display: flex; align-items: center; justify-content: space-around;
+    background: #000; user-select: none;
+  }
+  .nbar span { width: 60px; display: flex; justify-content: center; }
+  .nbar svg { display: block; fill: none; stroke: #fff; stroke-width: 2; stroke-linejoin: round; }
+  iframe { flex: 1; min-height: 0; width: 100%; border: none; background: white; display: block; }
 
   .status {
     display: flex; gap: 16px; padding: 4px 16px; font-size: 12px; color: var(--muted);
@@ -117,9 +139,9 @@
 
   @media (max-width: 760px) {
     .main { flex-direction: column; }
-    .editor-pane { border-right: none; border-bottom: 1px solid var(--border); }
-    .editor-pane, .preview-pane { flex: 1 1 50%; }
-    .preview-pane { border-left: none; }
+    .divider { width: auto; height: 10px; cursor: row-resize; border: none; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .divider::after { width: 40px; height: 4px; }
+    .preview-pane { flex: 0 0 50%; }
   }
 </style>
 </head>
@@ -154,7 +176,7 @@
     <button class="btn icon-btn" id="close-find" aria-label="Fechar busca">✕</button>
   </div>
 
-  <div class="main">
+  <div class="main" id="main">
     <div class="editor-pane">
       <div class="editor-box active" data-box="html">
         <div class="gutter" id="html-gut"></div>
@@ -169,15 +191,31 @@
         <div class="code"><pre class="mirror" id="js-mir" aria-hidden="true"></pre><textarea id="js-code" spellcheck="false" wrap="off"></textarea></div>
       </div>
     </div>
-    <div class="preview-pane">
-      <div class="preview-label">
-        <span>Preview ao vivo</span><span class="spacer"></span>
-        <button class="btn" id="z-out" aria-label="Diminuir celular">−</button>
-        <span id="z-val">100%</span>
-        <button class="btn" id="z-in" aria-label="Aumentar celular">+</button>
-        <button class="btn" id="z-fit">Ajustar</button>
+    <div class="divider" id="divider" role="separator" aria-label="Arrastar para redimensionar"></div>
+    <div class="preview-pane" id="pv">
+      <div class="stage" id="stage">
+        <div class="phone" id="phone">
+          <div class="sbar">
+            <div class="l">
+              <span id="clock">12:00</span>
+              <span class="op">Operadora</span>
+              <svg width="12" height="12" viewBox="0 0 24 24"><path d="M12 22a2.5 2.5 0 0 0 2.5-2.5h-5A2.5 2.5 0 0 0 12 22zm7-6V11c0-3.1-1.6-5.6-4.5-6.3V4a2.5 2.5 0 0 0-5 0v.7C6.6 5.4 5 7.9 5 11v5l-2 2v1h18v-1z"/></svg>
+            </div>
+            <div class="r">
+              <svg width="15" height="12" viewBox="0 0 24 24"><path d="M12 21 .6 8.2a17 17 0 0 1 22.8 0z"/></svg>
+              <svg width="15" height="12" viewBox="0 0 24 24"><path d="M2 22h20V2z"/></svg>
+              <span>85%</span>
+              <svg width="12" height="16" viewBox="0 0 12 20"><path d="M4 0h4v2h2.5A1.5 1.5 0 0 1 12 3.5v15a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 0 18.5v-15A1.5 1.5 0 0 1 1.5 2H4z"/></svg>
+            </div>
+          </div>
+          <iframe id="preview" title="preview"></iframe>
+          <div class="nbar">
+            <span aria-label="Voltar"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M19 4v16L5 12z"/></svg></span>
+            <span aria-label="Início"><svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg></span>
+            <span aria-label="Recentes"><svg width="20" height="20" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></svg></span>
+          </div>
+        </div>
       </div>
-      <div class="stage"><div class="phone"><iframe id="preview" title="preview"></iframe></div></div>
     </div>
   </div>
 
@@ -199,16 +237,19 @@
   const STORE = 'editor-html-v1';
 
   /* ---------- Preview ---------- */
-  function buildDoc() {
+  function buildDoc(forPreview) {
+    const hide = forPreview
+      ? '<style>html{scrollbar-width:none}html::-webkit-scrollbar,body::-webkit-scrollbar{display:none;width:0;height:0}</style>'
+      : '';
     return `<!DOCTYPE html>
 <html>
-<head><style>${E.css.ta.value}</style></head>
+<head>${forPreview ? '<meta name="viewport" content="width=device-width, initial-scale=1">' : ''}${hide}<style>${E.css.ta.value}</style></head>
 <body>${E.html.ta.value}
 <script>${E.js.ta.value}<\/script>
 </body>
 </html>`;
   }
-  function update() { iframe.srcdoc = buildDoc(); }
+  function update() { iframe.srcdoc = buildDoc(true); }
 
   /* ---------- Numeração de linhas ---------- */
   function gutter(t) {
@@ -378,7 +419,7 @@
   });
   $('download-btn').addEventListener('click', () => {
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([buildDoc()], { type: 'text/html' }));
+    a.href = URL.createObjectURL(new Blob([buildDoc(false)], { type: 'text/html' }));
     a.download = 'pagina.html';
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
@@ -407,22 +448,40 @@
   // ao digitar depois de limpar, o Desfazer some para não sobrescrever o texto novo
   TABS.forEach(t => E[t].ta.addEventListener('input', () => { if (backup) { backup = null; undoBtn.hidden = true; } }));
 
-  /* ---------- Tamanho do celular ---------- */
-  const phone = document.querySelector('.phone'), stage = document.querySelector('.stage');
-  let zoom = 1, manualZoom = false;
-  function setZoom(v) {
-    zoom = Math.min(1.5, Math.max(0.4, Math.round(v * 100) / 100));
-    phone.style.zoom = zoom;
-    $('z-val').textContent = Math.round(zoom * 100) + '%';
+  /* ---------- Celular: relógio e ajuste automático ---------- */
+  const phone = $('phone'), stage = $('stage'), pv = $('pv');
+  function tick() {
+    const d = new Date();
+    $('clock').textContent = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
   }
+  tick(); setInterval(tick, 20000);
+
+  // o celular sempre cresce/encolhe para caber no espaço que sobrou
   function fitZoom() {
-    manualZoom = false;
-    setZoom(Math.min((stage.clientWidth - 32) / 395, (stage.clientHeight - 32) / 832, 1.5));
+    const z = Math.min(stage.clientWidth / phone.offsetWidth, stage.clientHeight / phone.offsetHeight, 3);
+    phone.style.zoom = Math.max(0.2, z || 1);
   }
-  $('z-in').onclick = () => { manualZoom = true; setZoom(zoom + 0.1); };
-  $('z-out').onclick = () => { manualZoom = true; setZoom(zoom - 0.1); };
-  $('z-fit').onclick = fitZoom;
-  window.addEventListener('resize', () => { if (!manualZoom) fitZoom(); });
+  new ResizeObserver(fitZoom).observe(stage);
+  window.addEventListener('resize', fitZoom);
+
+  /* ---------- Divisor arrastável ---------- */
+  const divider = $('divider'), main = $('main');
+  divider.addEventListener('pointerdown', e => {
+    divider.setPointerCapture(e.pointerId);
+    divider.classList.add('drag'); document.body.classList.add('dragging');
+  });
+  divider.addEventListener('pointermove', e => {
+    if (!divider.hasPointerCapture(e.pointerId)) return;
+    const r = main.getBoundingClientRect();
+    const vertical = getComputedStyle(main).flexDirection === 'column';
+    const total = vertical ? r.height : r.width;
+    const pos = vertical ? e.clientY - r.top : e.clientX - r.left;
+    const size = Math.min(total - 90, Math.max(110, total - pos - 5));
+    pv.style.flex = `0 0 ${size}px`;
+  });
+  const endDrag = e => { divider.classList.remove('drag'); document.body.classList.remove('dragging'); };
+  divider.addEventListener('pointerup', endDrag);
+  divider.addEventListener('pointercancel', endDrag);
 
   /* ---------- Início ---------- */
   try {
