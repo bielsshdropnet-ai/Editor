@@ -97,6 +97,13 @@
 
   .preview-pane { background: var(--panel); }
   .preview-label { padding: 6px 12px; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--border); }
+  .preview-pane { flex: 0 0 440px; border-left: 1px solid var(--border); }
+  .stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 16px; background: var(--bg); }
+  .phone {
+    width: 375px; max-width: 100%; height: 100%; max-height: 812px; display: flex; overflow: hidden;
+    background: #000; border: 10px solid #0b0b12; border-radius: 40px;
+    box-shadow: 0 0 0 1px var(--border), 0 12px 32px rgba(0,0,0,.35);
+  }
   iframe { flex: 1; width: 100%; border: none; background: white; }
 
   .status {
@@ -109,6 +116,7 @@
     .main { flex-direction: column; }
     .editor-pane { border-right: none; border-bottom: 1px solid var(--border); }
     .editor-pane, .preview-pane { flex: 1 1 50%; }
+    .preview-pane { border-left: none; }
   }
 </style>
 </head>
@@ -126,6 +134,8 @@
     <button class="btn" id="find-btn" title="Buscar (Ctrl+F)">Buscar</button>
     <button class="btn" id="upload-btn">Carregar arquivo(s)</button>
     <button class="btn" id="download-btn">Baixar HTML</button>
+    <button class="btn" id="clear-btn">Limpar</button>
+    <button class="btn" id="undo-clear-btn" hidden>Desfazer</button>
     <span id="upload-status"></span>
   </header>
 
@@ -157,8 +167,8 @@
       </div>
     </div>
     <div class="preview-pane">
-      <div class="preview-label">Preview ao vivo</div>
-      <iframe id="preview" title="preview"></iframe>
+      <div class="preview-label">Preview ao vivo · tela de celular</div>
+      <div class="stage"><div class="phone"><iframe id="preview" title="preview"></iframe></div></div>
     </div>
   </div>
 
@@ -364,6 +374,29 @@
     a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   });
+
+  /* ---------- Limpar / Desfazer ---------- */
+  let backup = null;
+  const undoBtn = $('undo-clear-btn');
+  $('clear-btn').addEventListener('click', () => {
+    if (!TABS.some(t => E[t].ta.value)) { flash('O editor já está vazio'); return; }
+    backup = { html: E.html.ta.value, css: E.css.ta.value, js: E.js.ta.value };
+    TABS.forEach(t => { E[t].ta.value = ''; gutter(t); });
+    refresh(); update(); save();
+    $('st-len').textContent = '0 caracteres';
+    undoBtn.hidden = false;
+    flash('Editor limpo');
+  });
+  undoBtn.addEventListener('click', () => {
+    if (!backup) return;
+    TABS.forEach(t => { E[t].ta.value = backup[t]; gutter(t); });
+    backup = null; undoBtn.hidden = true;
+    refresh(); update(); save();
+    $('st-len').textContent = E[tab].ta.value.length + ' caracteres';
+    flash('Conteúdo restaurado');
+  });
+  // ao digitar depois de limpar, o Desfazer some para não sobrescrever o texto novo
+  TABS.forEach(t => E[t].ta.addEventListener('input', () => { if (backup) { backup = null; undoBtn.hidden = true; } }));
 
   /* ---------- Início ---------- */
   try {
