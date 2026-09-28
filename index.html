@@ -118,24 +118,28 @@
 
   /* Celular */
   .phone {
-    flex: none; margin: auto; width: 395px; height: 832px; display: flex; flex-direction: column; overflow: hidden;
-    background: #000; border: 8px solid #0b0b12; border-radius: 40px;
+    flex: none; margin: auto; width: 375px; height: 812px; display: flex; flex-direction: column; overflow: hidden;
+    position: relative; background: #000; border: 3px solid #1a1a1a; border-radius: 54px;
     box-shadow: 0 0 0 1px var(--border), 0 12px 32px rgba(0,0,0,.35);
   }
+  .island {
+    position: absolute; left: 50%; top: 10px; transform: translateX(-50%);
+    width: 120px; height: 32px; background: #000; border-radius: 20px; z-index: 5;
+  }
+  .home-ind {
+    position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%);
+    width: 134px; height: 5px; border-radius: 3px; background: #fff; opacity: .9; z-index: 5;
+  }
   .sbar {
-    flex: none; height: 30px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between;
-    background: #000; color: #fff; font-size: 12px; font-weight: 500; user-select: none;
+    flex: none; height: 47px; padding: 0 22px; display: flex; align-items: flex-end; padding-bottom: 8px;
+    justify-content: space-between; background: transparent; color: #fff; font-size: 15px; font-weight: 600;
+    user-select: none; position: relative; z-index: 4;
   }
-  .sbar .l, .sbar .r { display: flex; align-items: center; gap: 6px; }
+  .sbar .l, .sbar .r { display: flex; align-items: center; gap: 5px; }
   .sbar svg { display: block; fill: #fff; }
-  .sbar .op { opacity: .85; }
-  .nbar {
-    flex: none; height: 46px; display: flex; align-items: center; justify-content: space-around;
-    background: #000; user-select: none;
-  }
-  .nbar span { width: 60px; display: flex; justify-content: center; }
-  .nbar svg { display: block; fill: none; stroke: #fff; stroke-width: 2; stroke-linejoin: round; }
-  iframe { flex: 1; min-height: 0; width: 100%; border: none; background: white; display: block; }
+  .sbar .op { display: none; }
+
+  iframe { flex: 1; min-height: 0; width: 100%; border: none; background: white; display: block; margin-top: -47px; }
 
   .status {
     display: flex; gap: 16px; padding: 4px 16px; font-size: 12px; color: var(--muted);
@@ -201,6 +205,7 @@
     <div class="preview-pane" id="pv">
       <div class="stage" id="stage">
         <div class="phone" id="phone">
+          <div class="island"></div>
           <div class="sbar">
             <div class="l">
               <span id="clock">12:00</span>
@@ -215,11 +220,7 @@
             </div>
           </div>
           <iframe id="preview" title="preview"></iframe>
-          <div class="nbar">
-            <span aria-label="Voltar"><svg width="20" height="20" viewBox="0 0 24 24"><path d="M19 4v16L5 12z"/></svg></span>
-            <span aria-label="Início"><svg width="20" height="20" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg></span>
-            <span aria-label="Recentes"><svg width="20" height="20" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></svg></span>
-          </div>
+          <div class="home-ind"></div>
         </div>
         <div class="vscroll" id="vs" title="Subir / descer a tela do celular"><div id="vt"></div></div>
       </div>
