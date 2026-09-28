@@ -98,12 +98,15 @@
   .preview-pane { background: var(--panel); }
   .preview-label { padding: 6px 12px; font-size: 12px; color: var(--muted); border-bottom: 1px solid var(--border); }
   .preview-pane { flex: 0 0 440px; border-left: 1px solid var(--border); }
-  .stage { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; padding: 16px; background: var(--bg); }
+  .stage { flex: 1; min-height: 0; display: flex; overflow: auto; padding: 16px; background: var(--bg); }
   .phone {
-    width: 375px; max-width: 100%; height: 100%; max-height: 812px; display: flex; overflow: hidden;
+    flex: none; margin: auto; width: 395px; height: 832px; display: flex; overflow: hidden;
     background: #000; border: 10px solid #0b0b12; border-radius: 40px;
     box-shadow: 0 0 0 1px var(--border), 0 12px 32px rgba(0,0,0,.35);
   }
+  .preview-label { display: flex; align-items: center; gap: 8px; }
+  .preview-label .btn { padding: 3px 10px; font-size: 13px; }
+  #z-val { font-size: 12px; min-width: 40px; text-align: center; }
   iframe { flex: 1; width: 100%; border: none; background: white; }
 
   .status {
@@ -167,7 +170,13 @@
       </div>
     </div>
     <div class="preview-pane">
-      <div class="preview-label">Preview ao vivo · tela de celular</div>
+      <div class="preview-label">
+        <span>Preview ao vivo</span><span class="spacer"></span>
+        <button class="btn" id="z-out" aria-label="Diminuir celular">−</button>
+        <span id="z-val">100%</span>
+        <button class="btn" id="z-in" aria-label="Aumentar celular">+</button>
+        <button class="btn" id="z-fit">Ajustar</button>
+      </div>
       <div class="stage"><div class="phone"><iframe id="preview" title="preview"></iframe></div></div>
     </div>
   </div>
@@ -398,6 +407,23 @@
   // ao digitar depois de limpar, o Desfazer some para não sobrescrever o texto novo
   TABS.forEach(t => E[t].ta.addEventListener('input', () => { if (backup) { backup = null; undoBtn.hidden = true; } }));
 
+  /* ---------- Tamanho do celular ---------- */
+  const phone = document.querySelector('.phone'), stage = document.querySelector('.stage');
+  let zoom = 1, manualZoom = false;
+  function setZoom(v) {
+    zoom = Math.min(1.5, Math.max(0.4, Math.round(v * 100) / 100));
+    phone.style.zoom = zoom;
+    $('z-val').textContent = Math.round(zoom * 100) + '%';
+  }
+  function fitZoom() {
+    manualZoom = false;
+    setZoom(Math.min((stage.clientWidth - 32) / 395, (stage.clientHeight - 32) / 832, 1.5));
+  }
+  $('z-in').onclick = () => { manualZoom = true; setZoom(zoom + 0.1); };
+  $('z-out').onclick = () => { manualZoom = true; setZoom(zoom - 0.1); };
+  $('z-fit').onclick = fitZoom;
+  window.addEventListener('resize', () => { if (!manualZoom) fitZoom(); });
+
   /* ---------- Início ---------- */
   try {
     const s = JSON.parse(localStorage.getItem(STORE) || 'null');
@@ -406,6 +432,7 @@
   TABS.forEach(gutter);
   $('st-len').textContent = E.html.ta.value.length + ' caracteres';
   update();
+  fitZoom();
 </script>
 </body>
 </html>
