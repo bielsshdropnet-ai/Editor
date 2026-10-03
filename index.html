@@ -164,6 +164,46 @@
     .divider::after { width: 40px; height: 4px; }
     .preview-pane { flex: 0 0 50%; }
   }
+  /* Notificações do site */
+  .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn.primary:hover { color: #fff; filter: brightness(1.1); }
+  .btn.danger:hover { border-color: #ff6b6b; color: #ff6b6b; }
+  .av-modal {
+    position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,.6);
+    display: flex; align-items: flex-start; justify-content: center;
+    padding: calc(env(safe-area-inset-top, 0px) + 10px) 10px calc(env(safe-area-inset-bottom, 0px) + 10px);
+  }
+  .av-modal[hidden] { display: none; }
+  .av-box {
+    width: 100%; max-width: 560px; max-height: 100%; display: flex; flex-direction: column;
+    background: var(--panel); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
+  }
+  .av-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  .av-head strong { font-size: 15px; }
+  .av-body { overflow-y: auto; padding: 12px 14px 16px; display: flex; flex-direction: column; gap: 16px; }
+  .av-sec { display: flex; flex-direction: column; gap: 8px; }
+  .av-sec h3 { margin: 0; font-size: 13px; color: var(--muted); font-weight: 600; }
+  .av-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .av-row input[type=text] { flex: 1 1 140px; min-width: 0; }
+  .av-box input[type=text], .av-box textarea.av-ta {
+    width: 100%; position: static; inset: auto; height: auto; margin: 0;
+    background: var(--bg); color: var(--text); caret-color: var(--text);
+    border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px;
+    font-family: inherit; font-size: 14px; line-height: 1.4; white-space: pre-wrap;
+    resize: vertical; overflow: auto;
+  }
+  .av-box textarea.av-ta.av-mono { font-family: "SF Mono", Monaco, Consolas, "Courier New", monospace; font-size: 12px; line-height: 1.5; white-space: pre; }
+  .av-hint { font-size: 12px; color: var(--muted); min-height: 16px; }
+  .av-hint.err { color: #ff8a8a; }
+  .av-hint.ok { color: #7ee2a8; }
+  .av-item { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; background: var(--bg); display: flex; flex-direction: column; gap: 4px; }
+  .av-item.editing { border-color: var(--accent); }
+  .av-item b { font-size: 14px; }
+  .av-item p { margin: 0; font-size: 13px; color: var(--muted); white-space: pre-wrap; word-break: break-word; }
+  .av-item small { font-size: 11px; color: var(--muted); opacity: .85; }
+  .av-item .av-row { margin-top: 4px; }
+  .av-empty { font-size: 13px; color: var(--muted); }
+  .av-box a { color: var(--accent); font-size: 13px; }
 </style>
 </head>
 <body>
@@ -174,9 +214,11 @@
       <button class="tab-btn active" data-tab="html">HTML<span class="badge" id="b-html"></span></button>
       <button class="tab-btn" data-tab="css">CSS<span class="badge" id="b-css"></span></button>
       <button class="tab-btn" data-tab="js">JS<span class="badge" id="b-js"></span></button>
+      <button class="tab-btn" data-tab="json">JSON<span class="badge" id="b-json"></span></button>
     </div>
     <div class="spacer"></div>
-    <input type="file" id="file-input" accept=".html,.htm,.css,.js" multiple style="display:none">
+    <input type="file" id="file-input" accept=".html,.htm,.css,.js,.json" multiple style="display:none">
+    <button class="btn" id="avisos-btn" title="Notificações do site">Notificações</button>
     <button class="btn" id="find-btn" title="Buscar (Ctrl+F)">Buscar</button>
     <button class="btn" id="upload-btn">Carregar arquivo(s)</button>
     <button class="btn" id="download-btn">Baixar HTML</button>
@@ -210,6 +252,10 @@
       <div class="editor-box" data-box="js">
         <div class="gutter" id="js-gut"></div>
         <div class="code"><pre class="mirror" id="js-mir" aria-hidden="true"></pre><textarea id="js-code" spellcheck="false" wrap="off"></textarea></div>
+      </div>
+      <div class="editor-box" data-box="json">
+        <div class="gutter" id="json-gut"></div>
+        <div class="code"><pre class="mirror" id="json-mir" aria-hidden="true"></pre><textarea id="json-code" spellcheck="false" wrap="off"></textarea></div>
       </div>
     </div>
     <div class="divider" id="divider" role="separator" aria-label="Arrastar para redimensionar"></div>
@@ -246,13 +292,66 @@
   </div>
 </div>
 
+<div class="av-modal" id="av-modal" hidden>
+  <div class="av-box" role="dialog" aria-modal="true" aria-label="Notificações do site">
+    <div class="av-head">
+      <strong>Notificações do site</strong>
+      <button class="btn icon-btn" id="av-close" aria-label="Fechar">✕</button>
+    </div>
+    <div class="av-body">
+
+      <div class="av-sec">
+        <h3>1. Carregar as notificações que você já tem</h3>
+        <div class="av-row">
+          <input type="text" id="av-url" value="https://bielsshdropnet-ai.github.io/Site/avisos.json" aria-label="Endereço do avisos.json" autocomplete="off" spellcheck="false">
+          <button class="btn" id="av-load">Carregar do site</button>
+        </div>
+        <div class="av-row">
+          <button class="btn" id="av-from-tab">Pegar da aba JSON</button>
+        </div>
+        <div class="av-hint" id="av-msg" aria-live="polite"></div>
+      </div>
+
+      <div class="av-sec">
+        <h3 id="av-form-titulo">2. Nova notificação</h3>
+        <input type="text" id="av-titulo" placeholder="Título (ex.: Manutenção)" maxlength="80" autocomplete="off">
+        <textarea class="av-ta" id="av-texto" rows="3" placeholder="Mensagem" maxlength="500"></textarea>
+        <div class="av-row">
+          <input type="text" id="av-data" placeholder="Data" maxlength="20" autocomplete="off">
+          <button class="btn primary" id="av-add">Adicionar</button>
+          <button class="btn" id="av-cancel" hidden>Cancelar edição</button>
+        </div>
+      </div>
+
+      <div class="av-sec">
+        <h3>Notificações na lista</h3>
+        <div id="av-list" class="av-sec"></div>
+      </div>
+
+      <div class="av-sec">
+        <h3>3. Levar para o site</h3>
+        <textarea class="av-ta av-mono" id="av-json" rows="9" spellcheck="false" aria-label="Conteúdo do avisos.json"></textarea>
+        <div class="av-row">
+          <button class="btn primary" id="av-copy">Copiar JSON</button>
+          <button class="btn" id="av-download">Baixar avisos.json</button>
+          <button class="btn" id="av-import">Importar texto colado</button>
+          <button class="btn" id="av-to-tab">Mandar para a aba JSON</button>
+        </div>
+        <div class="av-hint" id="av-msg2" aria-live="polite"></div>
+        <a href="https://github.com/bielsshdropnet-ai/Site/edit/main/avisos.json" target="_blank" rel="noopener">Abrir avisos.json no GitHub para colar</a>
+      </div>
+
+    </div>
+  </div>
+</div>
+
 <script>
   const $ = id => document.getElementById(id);
-  const TABS = ['html', 'css', 'js'];
+  const TABS = ['html', 'css', 'js', 'json'];
   const E = {};
   TABS.forEach(t => { E[t] = { ta: $(t + '-code'), mir: $(t + '-mir'), gut: $(t + '-gut'), n: 0 }; });
   const iframe = $('preview');
-  let tab = 'html', cur = 0, M = { html: [], css: [], js: [] };
+  let tab = 'html', cur = 0, M = { html: [], css: [], js: [], json: [] };
   const STORE = 'editor-html-v1';
 
   /* ---------- Preview ---------- */
@@ -297,6 +396,12 @@
       { cls: 'cm-prop',     re: /[a-zA-Z-]+(?=\s*:)/ },
       { cls: 'cm-number',   re: /-?\d*\.?\d+(px|em|rem|%|vh|vw|s|ms|deg)?/ },
       { cls: 'cm-selector', re: /[.#][a-zA-Z][a-zA-Z0-9_-]*/ },
+    ],
+    json: [
+      { cls: 'cm-prop',    re: /"(?:\\.|[^"\\])*"(?=\s*:)/ },
+      { cls: 'cm-string',  re: /"(?:\\.|[^"\\])*"/ },
+      { cls: 'cm-keyword', re: /\b(?:true|false|null)\b/ },
+      { cls: 'cm-number',  re: /-?\b\d+\.?\d*(?:[eE][+-]?\d+)?\b/ },
     ],
     js: [
       { cls: 'cm-comment', re: /\/\/[^\n]*|\/\*[\s\S]*?\*\// },
@@ -433,7 +538,7 @@
   function flash(msg) { $('st-save').textContent = msg; }
   function save() {
     try {
-      localStorage.setItem(STORE, JSON.stringify({ html: E.html.ta.value, css: E.css.ta.value, js: E.js.ta.value }));
+      localStorage.setItem(STORE, JSON.stringify({ html: E.html.ta.value, css: E.css.ta.value, js: E.js.ta.value, json: E.json.ta.value }));
       flash('Salvo automaticamente');
     } catch (e) { flash(''); }
   }
@@ -479,11 +584,12 @@
     for (const file of files) {
       const text = await file.text();
       const ext = file.name.split('.').pop().toLowerCase();
-      const key = ext === 'html' || ext === 'htm' ? 'html' : ext === 'css' ? 'css' : ext === 'js' ? 'js' : null;
+      const key = ext === 'html' || ext === 'htm' ? 'html' : ext === 'css' ? 'css' : ext === 'js' ? 'js' : ext === 'json' ? 'json' : null;
       if (key) { E[key].ta.value = text; loaded.push(key.toUpperCase()); gutter(key); }
     }
+    if (loaded.length && loaded.every(k => k === 'JSON')) setTab('json');
     refresh(); update(); save();
-    uploadStatus.textContent = loaded.length ? `Carregado: ${loaded.join(', ')}` : 'Nenhum arquivo .html/.css/.js reconhecido';
+    uploadStatus.textContent = loaded.length ? `Carregado: ${loaded.join(', ')}` : 'Nenhum arquivo .html/.css/.js/.json reconhecido';
     setTimeout(() => { uploadStatus.textContent = ''; }, 4000);
     fileInput.value = '';
   });
@@ -500,7 +606,7 @@
   const undoBtn = $('undo-clear-btn');
   $('clear-btn').addEventListener('click', () => {
     if (!TABS.some(t => E[t].ta.value)) { flash('O editor já está vazio'); return; }
-    backup = { html: E.html.ta.value, css: E.css.ta.value, js: E.js.ta.value };
+    backup = { html: E.html.ta.value, css: E.css.ta.value, js: E.js.ta.value, json: E.json.ta.value };
     TABS.forEach(t => { E[t].ta.value = ''; gutter(t); });
     refresh(); update(); save();
     $('st-len').textContent = '0 caracteres';
@@ -604,6 +710,205 @@
   $('st-len').textContent = E.html.ta.value.length + ' caracteres';
   update();
   fitZoom();
+</script>
+<script>
+/* ---------- Notificações do site (avisos.json) ---------- */
+(function () {
+  const g = id => document.getElementById(id);
+  const modal = g('av-modal');
+  const KEY = 'editor-avisos-v1';
+  let lista = [];
+  let editId = null;
+
+  function hoje() { return new Date().toLocaleDateString('pt-BR'); }
+  function msg(id, texto, tipo) { const el = g(id); el.textContent = texto || ''; el.className = 'av-hint' + (tipo ? ' ' + tipo : ''); }
+
+  function normalizar(arr) {
+    const out = [];
+    (Array.isArray(arr) ? arr : []).forEach((a, i) => {
+      if (!a || typeof a !== 'object') return;
+      const id = Number(a.id);
+      out.push({
+        id: Number.isFinite(id) && id > 0 ? id : i + 1,
+        titulo: String(a.titulo == null ? '' : a.titulo),
+        mensagem: String(a.mensagem == null ? '' : a.mensagem),
+        data: String(a.data == null ? '' : a.data)
+      });
+    });
+    return out.sort((x, y) => y.id - x.id);
+  }
+  function guardar() { try { localStorage.setItem(KEY, JSON.stringify(lista)); } catch (e) {} }
+  function carregarLocal() {
+    try { lista = normalizar(JSON.parse(localStorage.getItem(KEY) || '[]')); } catch (e) { lista = []; }
+  }
+  function proximoId() { return lista.reduce((m, a) => Math.max(m, a.id), 0) + 1; }
+  function jsonTexto() { return JSON.stringify({ avisos: lista }, null, 2) + '\n'; }
+
+  function desenhar() {
+    const box = g('av-list');
+    box.textContent = '';
+    if (!lista.length) {
+      const v = document.createElement('div');
+      v.className = 'av-empty';
+      v.textContent = 'Nenhuma notificação na lista.';
+      box.appendChild(v);
+    }
+    lista.forEach(a => {
+      const it = document.createElement('div');
+      it.className = 'av-item' + (a.id === editId ? ' editing' : '');
+      const t = document.createElement('b'); t.textContent = '#' + a.id + '  ' + (a.titulo || 'Aviso');
+      const p = document.createElement('p'); p.textContent = a.mensagem;
+      it.append(t, p);
+      if (a.data) { const s = document.createElement('small'); s.textContent = a.data; it.appendChild(s); }
+      const row = document.createElement('div'); row.className = 'av-row';
+      const be = document.createElement('button'); be.className = 'btn'; be.type = 'button'; be.textContent = 'Editar';
+      be.addEventListener('click', () => iniciarEdicao(a.id));
+      const bd = document.createElement('button'); bd.className = 'btn danger'; bd.type = 'button'; bd.textContent = 'Apagar';
+      bd.addEventListener('click', () => apagar(a.id));
+      row.append(be, bd); it.appendChild(row);
+      box.appendChild(it);
+    });
+    g('av-json').value = jsonTexto();
+  }
+
+  function limparForm() {
+    editId = null;
+    g('av-titulo').value = ''; g('av-texto').value = ''; g('av-data').value = hoje();
+    g('av-add').textContent = 'Adicionar';
+    g('av-cancel').hidden = true;
+    g('av-form-titulo').textContent = '2. Nova notificação';
+  }
+  function iniciarEdicao(id) {
+    const a = lista.find(x => x.id === id);
+    if (!a) return;
+    editId = id;
+    g('av-titulo').value = a.titulo; g('av-texto').value = a.mensagem; g('av-data').value = a.data;
+    g('av-add').textContent = 'Salvar alterações';
+    g('av-cancel').hidden = false;
+    g('av-form-titulo').textContent = '2. Editando #' + id;
+    desenhar();
+    g('av-titulo').focus();
+  }
+  function apagar(id) {
+    const a = lista.find(x => x.id === id);
+    if (!a || !confirm('Apagar a notificação "' + (a.titulo || '#' + id) + '"?')) return;
+    lista = lista.filter(x => x.id !== id);
+    if (editId === id) limparForm();
+    guardar(); desenhar();
+    msg('av-msg2', 'Apagada. Lembre de levar o JSON novo para o site.', 'ok');
+  }
+
+  g('av-add').addEventListener('click', () => {
+    const titulo = g('av-titulo').value.trim();
+    const mensagem = g('av-texto').value.trim();
+    const data = g('av-data').value.trim();
+    if (!titulo && !mensagem) { msg('av-msg2', 'Escreva pelo menos o título ou a mensagem.', 'err'); return; }
+    const editou = editId != null;
+    if (editou) {
+      const a = lista.find(x => x.id === editId);
+      if (a) { a.titulo = titulo; a.mensagem = mensagem; a.data = data; }
+    } else {
+      lista.push({ id: proximoId(), titulo, mensagem, data });
+    }
+    lista = normalizar(lista);
+    limparForm(); guardar(); desenhar();
+    msg('av-msg2', (editou ? 'Alterações salvas.' : 'Adicionada com o número novo.') + ' Agora copie o JSON e cole no GitHub.', 'ok');
+  });
+  g('av-cancel').addEventListener('click', () => { limparForm(); desenhar(); });
+
+  g('av-load').addEventListener('click', async () => {
+    const url = g('av-url').value.trim();
+    if (!url) return;
+    if (lista.length && !confirm('Isso troca a lista atual pelo que está no site. Continuar?')) return;
+    msg('av-msg', 'Carregando…');
+    try {
+      const r = await fetch(url + (url.includes('?') ? '&' : '?') + 't=' + Date.now(), { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const d = await r.json();
+      if (!d || !Array.isArray(d.avisos)) throw new Error('formato');
+      lista = normalizar(d.avisos);
+      limparForm(); guardar(); desenhar();
+      msg('av-msg', lista.length + ' notificação(ões) carregada(s) do site.', 'ok');
+    } catch (e) {
+      msg('av-msg', 'Não consegui carregar. Cole o JSON na caixa do passo 3 e toque em "Importar texto colado".', 'err');
+    }
+  });
+
+  g('av-from-tab').addEventListener('click', () => {
+    const texto = g('json-code').value.trim();
+    if (!texto) { msg('av-msg', 'A aba JSON está vazia. Carregue um arquivo .json nela primeiro.', 'err'); return; }
+    try {
+      const d = JSON.parse(texto);
+      if (!d || !Array.isArray(d.avisos)) throw new Error('formato');
+      if (lista.length && !confirm('Isso troca a lista atual pelo que está na aba JSON. Continuar?')) return;
+      lista = normalizar(d.avisos);
+      limparForm(); guardar(); desenhar();
+      msg('av-msg', lista.length + ' notificação(ões) pegas da aba JSON.', 'ok');
+    } catch (e) {
+      msg('av-msg', 'A aba JSON não tem um avisos.json válido. Ele precisa ter { "avisos": [ ... ] }.', 'err');
+    }
+  });
+
+  g('av-to-tab').addEventListener('click', () => {
+    const ta = g('json-code');
+    if (ta.value.trim() && !confirm('Isso troca o que está na aba JSON pelas notificações da lista. Continuar?')) return;
+    ta.value = jsonTexto();
+    ta.dispatchEvent(new Event('input'));
+    msg('av-msg2', 'Enviado para a aba JSON.', 'ok');
+  });
+
+  g('av-import').addEventListener('click', () => {
+    try {
+      const d = JSON.parse(g('av-json').value);
+      if (!d || !Array.isArray(d.avisos)) throw new Error('formato');
+      lista = normalizar(d.avisos);
+      limparForm(); guardar(); desenhar();
+      msg('av-msg2', lista.length + ' notificação(ões) importada(s).', 'ok');
+    } catch (e) {
+      msg('av-msg2', 'O texto não é um avisos.json válido. Ele precisa ter { "avisos": [ ... ] }.', 'err');
+    }
+  });
+
+  g('av-copy').addEventListener('click', async () => {
+    const texto = jsonTexto();
+    try {
+      await navigator.clipboard.writeText(texto);
+      msg('av-msg2', 'JSON copiado! Cole no avisos.json do GitHub.', 'ok');
+    } catch (e) {
+      const ta = g('av-json');
+      ta.value = texto; ta.focus(); ta.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch (e2) {}
+      msg('av-msg2', ok ? 'JSON copiado! Cole no avisos.json do GitHub.' : 'Não deu para copiar sozinho. Segure o texto, selecione tudo e copie.', ok ? 'ok' : 'err');
+    }
+  });
+
+  g('av-download').addEventListener('click', () => {
+    const blob = new Blob([jsonTexto()], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'avisos.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    msg('av-msg2', 'Arquivo baixado. Envie ele no GitHub (Add file → Upload files).', 'ok');
+  });
+
+  function abrir() {
+    modal.hidden = false;
+    msg('av-msg', ''); msg('av-msg2', '');
+    if (!g('av-data').value) g('av-data').value = hoje();
+    desenhar();
+  }
+  function fechar() { modal.hidden = true; }
+  g('avisos-btn').addEventListener('click', abrir);
+  g('av-close').addEventListener('click', fechar);
+  modal.addEventListener('click', e => { if (e.target === modal) fechar(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && !modal.hidden) fechar(); });
+
+  carregarLocal();
+  limparForm();
+  desenhar();
+})();
 </script>
 </body>
 </html>
