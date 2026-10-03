@@ -5,228 +5,95 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Editor HTML / CSS / JS</title>
 <style>
-  :root {
-    --bg: #1e1e2e; --panel: #262838; --text: #e8e8f0; --muted: #9a9ab0;
-    --accent: #7c9eff; --border: #3a3d52;
-    --hl: rgba(255,214,102,.30); --hlcur: rgba(255,140,60,.65);
-  }
-  @media (prefers-color-scheme: light) {
-    :root:not([data-theme="dark"]) {
-      --bg: #f4f5f9; --panel: #ffffff; --text: #1c1e2b; --muted: #6b6d80;
-      --accent: #4a6bff; --border: #dcdee8;
-      --hl: rgba(255,200,0,.35); --hlcur: rgba(255,120,30,.55);
-    }
-  }
-  :root[data-theme="dark"] {
-    --bg: #1e1e2e; --panel: #262838; --text: #e8e8f0; --muted: #9a9ab0;
-    --accent: #7c9eff; --border: #3a3d52;
-  }
-  .cm-comment { color: #6a9955; font-style: italic; }
-  .cm-string  { color: #ce9178; }
-  .cm-keyword { color: #c586c0; }
-  .cm-tag     { color: #569cd6; }
-  .cm-attr    { color: #9cdcfe; }
-  .cm-number  { color: #b5cea8; }
-  .cm-prop    { color: #9cdcfe; }
-  .cm-selector{ color: #d7ba7d; }
-  .cm-func    { color: #dcdcaa; }
-  * { box-sizing: border-box; }
-  html, body {
-    height: 100%; margin: 0; background: var(--bg); color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    padding-top: env(safe-area-inset-top, 0px);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-  button, input { font: inherit; color: inherit; }
-  button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-  .app { display: flex; flex-direction: column; height: 100%; }
-
-  header {
-    padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--panel);
-    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-  }
-  header h1 { font-size: 15px; margin: 0; font-weight: 600; }
-  .tabs { display: flex; gap: 4px; }
-  .tab-btn {
-    background: transparent; border: 1px solid var(--border); color: var(--muted);
-    padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer;
-    display: inline-flex; align-items: center; gap: 6px;
-  }
-  .tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .badge {
-    background: var(--hlcur); color: var(--text); border-radius: 9px;
-    font-size: 11px; line-height: 16px; min-width: 18px; padding: 0 5px; text-align: center;
-  }
-  .badge:empty { display: none; }
-  .spacer { flex: 1; }
-  .btn {
-    background: var(--bg); border: 1px solid var(--border); color: var(--text);
-    padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer;
-  }
-  .btn:hover { border-color: var(--accent); color: var(--accent); }
-  #upload-status { font-size: 12px; color: var(--muted); }
-
-  .findbar {
-    display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
-    padding: 8px 16px; border-bottom: 1px solid var(--border); background: var(--panel);
-  }
-  .findbar[hidden] { display: none; }
-  .findbar input[type=search], .findbar input[type=text] {
-    flex: 1 1 150px; min-width: 0; background: var(--bg); border: 1px solid var(--border);
-    border-radius: 6px; padding: 6px 10px; font-size: 13px;
-  }
-  .chk { font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 4px; }
-  #find-info { font-size: 12px; color: var(--muted); min-width: 84px; }
-  .icon-btn { padding: 6px 10px; }
-
-  .main { flex: 1; display: flex; min-height: 0; }
-  .editor-pane { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
-  .editor-box { flex: 1; display: none; min-height: 0; background: var(--panel); }
-  .editor-box.active { display: flex; }
-  .gutter {
-    width: 44px; flex: none; overflow: hidden; white-space: pre; text-align: right;
-    padding: 12px 8px; color: var(--muted); border-right: 1px solid var(--border); user-select: none;
-  }
-  .code { flex: 1; position: relative; min-width: 0; }
-  .gutter, .mirror, textarea {
-    font-family: "SF Mono", Monaco, Consolas, "Courier New", monospace;
-    font-size: 13px; line-height: 20px; tab-size: 2;
-  }
-  .mirror, textarea {
-    position: absolute; inset: 0; margin: 0; padding: 12px; border: none; white-space: pre;
-  }
-  .mirror { overflow: hidden; color: var(--text); pointer-events: none; }
-  .mirror mark { background: var(--hl); color: transparent; border-radius: 2px; }
-  .mirror mark.cur { background: var(--hlcur); }
-  body.searching .mirror { color: transparent; }
-  body.searching textarea { color: var(--text); }
-  textarea {
-    width: 100%; height: 100%; resize: none; outline: none; overflow: auto;
-    background: transparent; color: transparent; caret-color: var(--text);
-  }
-
-  /* Divisor arrastável */
-  .divider {
-    flex: none; width: 10px; cursor: col-resize; touch-action: none;
-    background: var(--panel); border-left: 1px solid var(--border); border-right: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: center;
-  }
-  .divider::after { content: ""; width: 4px; height: 40px; border-radius: 2px; background: var(--muted); opacity: .6; }
-  .divider:hover::after, .divider.drag::after { background: var(--accent); opacity: 1; }
-  body.dragging { user-select: none; }
-  body.dragging iframe { pointer-events: none; }
-
-  .preview-pane {
-    flex: 0 0 440px; min-width: 0; min-height: 0; display: flex; background: var(--bg); overflow: hidden;
-  }
-  .stage { flex: 1; min-width: 0; min-height: 0; display: flex; overflow: hidden; position: relative; padding-right: 26px; }
-  .vscroll {
-    position: absolute; right: 6px; top: 8px; bottom: 8px; width: 14px; border-radius: 7px;
-    background: var(--panel); border: 1px solid var(--border); touch-action: none; cursor: pointer;
-  }
-  #vt { display: none; position: absolute; left: 1px; right: 1px; top: 0; border-radius: 6px; background: var(--muted); opacity: .8; }
-  .vscroll:hover #vt, .vscroll.drag #vt { background: var(--accent); opacity: 1; }
-
-  /* Celular */
-  .phone {
-    flex: none; margin: auto; width: 375px; height: 812px; display: flex; flex-direction: column; overflow: hidden;
-    position: relative; background: #000; border: 3px solid #1a1a1a; border-radius: 54px;
-    box-shadow: 0 0 0 1px var(--border), 0 12px 32px rgba(0,0,0,.35);
-  }
-  .island {
-    position: absolute; left: 50%; top: 10px; transform: translateX(-50%);
-    width: 120px; height: 32px; background: #000; border-radius: 20px; z-index: 5;
-  }
-  .home-ind {
-    position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%);
-    width: 134px; height: 5px; border-radius: 3px; background: #fff; opacity: .9; z-index: 5;
-  }
-  .sbar {
-    flex: none; height: 47px; padding: 0 22px; display: flex; align-items: flex-end; padding-bottom: 8px;
-    justify-content: space-between; background: transparent; color: #fff; font-size: 15px; font-weight: 600;
-    user-select: none; position: relative; z-index: 4;
-  }
-  .sbar .l, .sbar .r { display: flex; align-items: center; gap: 5px; }
-  .sbar svg { display: block; fill: #fff; }
-  .sbar .op { display: none; }
-
-  iframe { flex: 1; min-height: 0; width: 100%; border: none; background: white; display: block; margin-top: -47px; }
-
-  .status {
-    display: flex; gap: 16px; padding: 4px 16px; font-size: 12px; color: var(--muted);
-    border-top: 1px solid var(--border); background: var(--panel);
-  }
-  .status .spacer { flex: 1; }
-
-  @media (max-width: 760px) {
-    .main { flex-direction: column; }
-    .divider { width: auto; height: 10px; cursor: row-resize; border: none; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
-    .divider::after { width: 40px; height: 4px; }
-    .preview-pane { flex: 0 0 50%; }
-  }
-  /* Notificações do site */
-  .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-  .btn.primary:hover { color: #fff; filter: brightness(1.1); }
-  .btn.danger:hover { border-color: #ff6b6b; color: #ff6b6b; }
-  .av-modal {
-    position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,.6);
-    display: flex; align-items: flex-start; justify-content: center;
-    padding: calc(env(safe-area-inset-top, 0px) + 10px) 10px calc(env(safe-area-inset-bottom, 0px) + 10px);
-  }
-  .av-modal[hidden] { display: none; }
-  .av-box {
-    width: 100%; max-width: 560px; max-height: 100%; display: flex; flex-direction: column;
-    background: var(--panel); border: 1px solid var(--border); border-radius: 12px; overflow: hidden;
-  }
-  .av-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-bottom: 1px solid var(--border); }
-  .av-head strong { font-size: 15px; }
-  .av-body { overflow-y: auto; padding: 12px 14px 16px; display: flex; flex-direction: column; gap: 16px; }
-  .av-sec { display: flex; flex-direction: column; gap: 8px; }
-  .av-sec h3 { margin: 0; font-size: 13px; color: var(--muted); font-weight: 600; }
-  .av-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-  .av-row input[type=text] { flex: 1 1 140px; min-width: 0; }
-  .av-box input[type=text], .av-box textarea.av-ta {
-    width: 100%; position: static; inset: auto; height: auto; margin: 0;
-    background: var(--bg); color: var(--text); caret-color: var(--text);
-    border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px;
-    font-family: inherit; font-size: 14px; line-height: 1.4; white-space: pre-wrap;
-    resize: vertical; overflow: auto;
-  }
-  .av-box textarea.av-ta.av-mono { font-family: "SF Mono", Monaco, Consolas, "Courier New", monospace; font-size: 12px; line-height: 1.5; white-space: pre; }
-  .av-hint { font-size: 12px; color: var(--muted); min-height: 16px; }
-  .av-hint.err { color: #ff8a8a; }
-  .av-hint.ok { color: #7ee2a8; }
-  .av-item { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; background: var(--bg); display: flex; flex-direction: column; gap: 4px; }
-  .av-item.editing { border-color: var(--accent); }
-  .av-item b { font-size: 14px; }
-  .av-item p { margin: 0; font-size: 13px; color: var(--muted); white-space: pre-wrap; word-break: break-word; }
-  .av-item small { font-size: 11px; color: var(--muted); opacity: .85; }
-  .av-item .av-row { margin-top: 4px; }
-  .av-empty { font-size: 13px; color: var(--muted); }
-  .av-box a { color: var(--accent); font-size: 13px; }
+:root{--bg:#1e1e2e;--panel:#262838;--text:#e8e8f0;--muted:#9a9ab0;--accent:#7c9eff;--border:#3a3d52;--hl:rgba(255,214,102,.30);--hlcur:rgba(255,140,60,.65)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#f4f5f9;--panel:#fff;--text:#1c1e2b;--muted:#6b6d80;--accent:#4a6bff;--border:#dcdee8;--hl:rgba(255,200,0,.35);--hlcur:rgba(255,120,30,.55)}}
+:root[data-theme="dark"]{--bg:#1e1e2e;--panel:#262838;--text:#e8e8f0;--muted:#9a9ab0;--accent:#7c9eff;--border:#3a3d52}
+.cm-comment{color:#6a9955;font-style:italic}.cm-string{color:#ce9178}.cm-keyword{color:#c586c0}.cm-tag{color:#569cd6}.cm-attr,.cm-prop{color:#9cdcfe}.cm-number{color:#b5cea8}.cm-selector{color:#d7ba7d}.cm-func{color:#dcdcaa}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+button,input{font:inherit;color:inherit}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.app{display:flex;flex-direction:column;height:100%}
+header{padding:10px 16px;border-bottom:1px solid var(--border);background:var(--panel);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+header h1{font-size:15px;margin:0;font-weight:600}
+.tabs{display:flex;gap:4px}
+.tab-btn{background:transparent;border:1px solid var(--border);color:var(--muted);padding:6px 12px;border-radius:6px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.tab-btn.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tn{max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.badge{background:var(--hlcur);color:var(--text);border-radius:9px;font-size:11px;line-height:16px;min-width:18px;padding:0 5px;text-align:center}
+.badge:empty{display:none}
+.spacer{flex:1}
+.btn{background:var(--bg);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;font-size:13px;font-weight:500;cursor:pointer}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent)}.btn.primary:hover{color:#fff;filter:brightness(1.1)}
+.btn.danger:hover{border-color:#ff6b6b;color:#ff6b6b}
+#upload-status{font-size:12px;color:var(--muted)}
+.findbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--border);background:var(--panel)}
+.findbar[hidden]{display:none}
+.findbar input[type=search],.findbar input[type=text]{flex:1 1 150px;min-width:0;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:13px}
+.chk{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:4px}
+#find-info{font-size:12px;color:var(--muted);min-width:84px}
+.icon-btn{padding:6px 10px}
+.main{flex:1;display:flex;min-height:0}
+.editor-pane{flex:1;min-width:0;min-height:0;display:flex;flex-direction:column}
+.editor-box{flex:1;display:none;min-height:0;background:var(--panel)}.editor-box.active{display:flex}
+.gutter{width:44px;flex:none;overflow:hidden;white-space:pre;text-align:right;padding:12px 8px;color:var(--muted);border-right:1px solid var(--border);user-select:none}
+.code{flex:1;position:relative;min-width:0}
+.gutter,.mirror,textarea{font-family:"SF Mono",Monaco,Consolas,"Courier New",monospace;font-size:13px;line-height:20px;tab-size:2}
+.mirror,textarea{position:absolute;inset:0;margin:0;padding:12px;border:none;white-space:pre}
+.mirror{overflow:hidden;color:var(--text);pointer-events:none}
+.mirror mark{background:var(--hl);color:transparent;border-radius:2px}.mirror mark.cur{background:var(--hlcur)}
+body.searching .mirror{color:transparent}body.searching textarea{color:var(--text)}
+textarea{width:100%;height:100%;resize:none;outline:none;overflow:auto;background:transparent;color:transparent;caret-color:var(--text)}
+.divider{flex:none;width:10px;cursor:col-resize;touch-action:none;background:var(--panel);border-left:1px solid var(--border);border-right:1px solid var(--border);display:flex;align-items:center;justify-content:center}
+.divider::after{content:"";width:4px;height:40px;border-radius:2px;background:var(--muted);opacity:.6}
+.divider:hover::after,.divider.drag::after{background:var(--accent);opacity:1}
+body.dragging{user-select:none}body.dragging iframe{pointer-events:none}
+.preview-pane{flex:0 0 440px;min-width:0;min-height:0;display:flex;background:var(--bg);overflow:hidden}
+.stage{flex:1;min-width:0;min-height:0;display:flex;overflow:hidden;position:relative;padding-right:26px}
+.vscroll{position:absolute;right:6px;top:8px;bottom:8px;width:14px;border-radius:7px;background:var(--panel);border:1px solid var(--border);touch-action:none;cursor:pointer}
+#vt{display:none;position:absolute;left:1px;right:1px;top:0;border-radius:6px;background:var(--muted);opacity:.8}
+.vscroll:hover #vt,.vscroll.drag #vt{background:var(--accent);opacity:1}
+.phone{flex:none;margin:auto;width:375px;height:812px;display:flex;flex-direction:column;overflow:hidden;position:relative;background:#000;border:3px solid #1a1a1a;border-radius:54px;box-shadow:0 0 0 1px var(--border),0 12px 32px rgba(0,0,0,.35)}
+.island{position:absolute;left:50%;top:10px;transform:translateX(-50%);width:120px;height:32px;background:#000;border-radius:20px;z-index:5}
+.home-ind{position:absolute;left:50%;bottom:8px;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:#fff;opacity:.9;z-index:5}
+.sbar{flex:none;height:47px;padding:0 22px 8px;display:flex;align-items:flex-end;justify-content:space-between;color:#fff;font-size:15px;font-weight:600;user-select:none;position:relative;z-index:4}
+.sbar .l,.sbar .r{display:flex;align-items:center;gap:5px}
+.sbar svg{display:block;fill:#fff}.sbar .op{display:none}
+iframe{flex:1;min-height:0;width:100%;border:none;background:#fff;display:block;margin-top:-47px}
+.status{display:flex;gap:16px;padding:4px 16px;font-size:12px;color:var(--muted);border-top:1px solid var(--border);background:var(--panel)}
+@media (max-width:760px){.main{flex-direction:column}.divider{width:auto;height:10px;cursor:row-resize;border:none;border-top:1px solid var(--border);border-bottom:1px solid var(--border)}.divider::after{width:40px;height:4px}.preview-pane{flex:0 0 50%}}
+.av-modal{position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.6);display:flex;align-items:flex-start;justify-content:center;padding:calc(env(safe-area-inset-top,0px) + 10px) 10px calc(env(safe-area-inset-bottom,0px) + 10px)}
+.av-modal[hidden]{display:none}
+.av-box{width:100%;max-width:560px;max-height:100%;display:flex;flex-direction:column;background:var(--panel);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.av-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border)}.av-head strong{font-size:15px}
+.av-body{overflow-y:auto;padding:12px 14px 16px;display:flex;flex-direction:column;gap:16px}
+.av-sec{display:flex;flex-direction:column;gap:8px}.av-sec h3{margin:0;font-size:13px;color:var(--muted);font-weight:600}
+.av-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.av-row input[type=text]{flex:1 1 140px;min-width:0}
+.av-box input[type=text],.av-box textarea.av-ta{width:100%;position:static;inset:auto;height:auto;margin:0;background:var(--bg);color:var(--text);caret-color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px 10px;font-family:inherit;font-size:14px;line-height:1.4;white-space:pre-wrap;resize:vertical;overflow:auto}
+.av-box textarea.av-ta.av-mono{font-family:"SF Mono",Monaco,Consolas,"Courier New",monospace;font-size:12px;line-height:1.5;white-space:pre}
+.av-hint{font-size:12px;color:var(--muted);min-height:16px}.av-hint.err{color:#ff8a8a}.av-hint.ok{color:#7ee2a8}
+.av-item{border:1px solid var(--border);border-radius:8px;padding:10px 12px;background:var(--bg);display:flex;flex-direction:column;gap:4px}.av-item.editing{border-color:var(--accent)}
+.av-item b{font-size:14px}.av-item p{margin:0;font-size:13px;color:var(--muted);white-space:pre-wrap;word-break:break-word}.av-item small{font-size:11px;color:var(--muted);opacity:.85}.av-item .av-row{margin-top:4px}
+.av-empty{font-size:13px;color:var(--muted)}.av-box a{color:var(--accent);font-size:13px}
 </style>
 </head>
 <body>
 <div class="app">
   <header>
     <h1>Editor HTML / CSS / JS</h1>
-    <div class="tabs">
-      <button class="tab-btn active" data-tab="html">HTML<span class="badge" id="b-html"></span></button>
-      <button class="tab-btn" data-tab="css">CSS<span class="badge" id="b-css"></span></button>
-      <button class="tab-btn" data-tab="js">JS<span class="badge" id="b-js"></span></button>
-      <button class="tab-btn" data-tab="json">JSON<span class="badge" id="b-json"></span></button>
-    </div>
+    <div class="tabs" id="tabs"></div>
     <div class="spacer"></div>
-    <input type="file" id="file-input" accept=".html,.htm,.css,.js,.json" multiple style="display:none">
+    <input type="file" id="file-input" multiple style="display:none">
     <button class="btn" id="avisos-btn" title="Notificações do site">Notificações</button>
     <button class="btn" id="find-btn" title="Buscar (Ctrl+F)">Buscar</button>
     <button class="btn" id="upload-btn">Carregar arquivo(s)</button>
-    <button class="btn" id="download-btn">Baixar HTML</button>
+    <button class="btn" id="download-tab-btn" title="Baixa só a aba aberta, com o nome do arquivo">Baixar aba</button>
+    <button class="btn" id="download-btn" title="Junta HTML, CSS e JS em um arquivo só">Baixar tudo em 1 HTML</button>
     <button class="btn" id="clear-btn">Limpar</button>
     <button class="btn" id="undo-clear-btn" hidden>Desfazer</button>
     <span id="upload-status"></span>
   </header>
-
   <div class="findbar" id="findbar" hidden>
     <input id="find" type="search" placeholder="Buscar no código" aria-label="Buscar no código" autocomplete="off">
     <input id="rep" type="text" placeholder="Substituir por" aria-label="Substituir por" autocomplete="off">
@@ -238,37 +105,16 @@
     <button class="btn" id="repall">Substituir tudo</button>
     <button class="btn icon-btn" id="close-find" aria-label="Fechar busca">✕</button>
   </div>
-
   <div class="main" id="main">
-    <div class="editor-pane">
-      <div class="editor-box active" data-box="html">
-        <div class="gutter" id="html-gut"></div>
-        <div class="code"><pre class="mirror" id="html-mir" aria-hidden="true"></pre><textarea id="html-code" spellcheck="false" wrap="off"></textarea></div>
-      </div>
-      <div class="editor-box" data-box="css">
-        <div class="gutter" id="css-gut"></div>
-        <div class="code"><pre class="mirror" id="css-mir" aria-hidden="true"></pre><textarea id="css-code" spellcheck="false" wrap="off"></textarea></div>
-      </div>
-      <div class="editor-box" data-box="js">
-        <div class="gutter" id="js-gut"></div>
-        <div class="code"><pre class="mirror" id="js-mir" aria-hidden="true"></pre><textarea id="js-code" spellcheck="false" wrap="off"></textarea></div>
-      </div>
-      <div class="editor-box" data-box="json">
-        <div class="gutter" id="json-gut"></div>
-        <div class="code"><pre class="mirror" id="json-mir" aria-hidden="true"></pre><textarea id="json-code" spellcheck="false" wrap="off"></textarea></div>
-      </div>
-    </div>
+    <div class="editor-pane" id="ep"></div>
     <div class="divider" id="divider" role="separator" aria-label="Arrastar para redimensionar"></div>
     <div class="preview-pane" id="pv">
       <div class="stage" id="stage">
         <div class="phone" id="phone">
           <div class="island"></div>
           <div class="sbar">
-            <div class="l">
-              <span id="clock">12:00</span>
-              <span class="op">Operadora</span>
-              <svg width="12" height="12" viewBox="0 0 24 24"><path d="M12 22a2.5 2.5 0 0 0 2.5-2.5h-5A2.5 2.5 0 0 0 12 22zm7-6V11c0-3.1-1.6-5.6-4.5-6.3V4a2.5 2.5 0 0 0-5 0v.7C6.6 5.4 5 7.9 5 11v5l-2 2v1h18v-1z"/></svg>
-            </div>
+            <div class="l"><span id="clock">12:00</span><span class="op">Operadora</span>
+              <svg width="12" height="12" viewBox="0 0 24 24"><path d="M12 22a2.5 2.5 0 0 0 2.5-2.5h-5A2.5 2.5 0 0 0 12 22zm7-6V11c0-3.1-1.6-5.6-4.5-6.3V4a2.5 2.5 0 0 0-5 0v.7C6.6 5.4 5 7.9 5 11v5l-2 2v1h18v-1z"/></svg></div>
             <div class="r">
               <svg width="15" height="12" viewBox="0 0 24 24"><path d="M12 21 .6 8.2a17 17 0 0 1 22.8 0z"/></svg>
               <svg width="15" height="12" viewBox="0 0 24 24"><path d="M2 22h20V2z"/></svg>
@@ -283,631 +129,557 @@
       </div>
     </div>
   </div>
-
-  <div class="status">
-    <span id="st-pos">Ln 1, Col 1</span>
-    <span id="st-len">0 caracteres</span>
-    <span class="spacer"></span>
-    <span id="st-save"></span>
-  </div>
+  <div class="status"><span id="st-pos">Ln 1, Col 1</span><span id="st-len">0 caracteres</span><span class="spacer"></span><span id="st-save"></span></div>
 </div>
 
 <div class="av-modal" id="av-modal" hidden>
   <div class="av-box" role="dialog" aria-modal="true" aria-label="Notificações do site">
-    <div class="av-head">
-      <strong>Notificações do site</strong>
-      <button class="btn icon-btn" id="av-close" aria-label="Fechar">✕</button>
-    </div>
+    <div class="av-head"><strong>Notificações do site</strong><button class="btn icon-btn" id="av-close" aria-label="Fechar">✕</button></div>
     <div class="av-body">
-
       <div class="av-sec">
         <h3>1. Carregar as notificações que você já tem</h3>
-        <div class="av-row">
-          <input type="text" id="av-url" value="https://bielsshdropnet-ai.github.io/Site/avisos.json" aria-label="Endereço do avisos.json" autocomplete="off" spellcheck="false">
-          <button class="btn" id="av-load">Carregar do site</button>
-        </div>
-        <div class="av-row">
-          <button class="btn" id="av-from-tab">Pegar da aba JSON</button>
-        </div>
+        <div class="av-row"><input type="text" id="av-url" value="https://bielsshdropnet-ai.github.io/Site/avisos.json" aria-label="Endereço do avisos.json" autocomplete="off" spellcheck="false"><button class="btn" id="av-load">Carregar do site</button></div>
+        <div class="av-row"><button class="btn" id="av-from-tab">Pegar da aba JSON</button></div>
         <div class="av-hint" id="av-msg" aria-live="polite"></div>
       </div>
-
       <div class="av-sec">
         <h3 id="av-form-titulo">2. Nova notificação</h3>
         <input type="text" id="av-titulo" placeholder="Título (ex.: Manutenção)" maxlength="80" autocomplete="off">
         <textarea class="av-ta" id="av-texto" rows="3" placeholder="Mensagem" maxlength="500"></textarea>
-        <div class="av-row">
-          <input type="text" id="av-data" placeholder="Data" maxlength="20" autocomplete="off">
-          <button class="btn primary" id="av-add">Adicionar</button>
-          <button class="btn" id="av-cancel" hidden>Cancelar edição</button>
-        </div>
+        <div class="av-row"><input type="text" id="av-data" placeholder="Data" maxlength="20" autocomplete="off"><button class="btn primary" id="av-add">Adicionar</button><button class="btn" id="av-cancel" hidden>Cancelar edição</button></div>
       </div>
-
-      <div class="av-sec">
-        <h3>Notificações na lista</h3>
-        <div id="av-list" class="av-sec"></div>
-      </div>
-
+      <div class="av-sec"><h3>Notificações na lista</h3><div id="av-list" class="av-sec"></div></div>
       <div class="av-sec">
         <h3>3. Levar para o site</h3>
         <textarea class="av-ta av-mono" id="av-json" rows="9" spellcheck="false" aria-label="Conteúdo do avisos.json"></textarea>
-        <div class="av-row">
-          <button class="btn primary" id="av-copy">Copiar JSON</button>
-          <button class="btn" id="av-download">Baixar avisos.json</button>
-          <button class="btn" id="av-import">Importar texto colado</button>
-          <button class="btn" id="av-to-tab">Mandar para a aba JSON</button>
-        </div>
+        <div class="av-row"><button class="btn primary" id="av-copy">Copiar JSON</button><button class="btn" id="av-download">Baixar avisos.json</button><button class="btn" id="av-import">Importar texto colado</button><button class="btn" id="av-to-tab">Mandar para a aba JSON</button></div>
         <div class="av-hint" id="av-msg2" aria-live="polite"></div>
         <a href="https://github.com/bielsshdropnet-ai/Site/edit/main/avisos.json" target="_blank" rel="noopener">Abrir avisos.json no GitHub para colar</a>
       </div>
-
     </div>
   </div>
 </div>
-
 <script>
-  const $ = id => document.getElementById(id);
-  const TABS = ['html', 'css', 'js', 'json'];
-  const E = {};
-  TABS.forEach(t => { E[t] = { ta: $(t + '-code'), mir: $(t + '-mir'), gut: $(t + '-gut'), n: 0 }; });
-  const iframe = $('preview');
-  let tab = 'html', cur = 0, M = { html: [], css: [], js: [], json: [] };
-  const STORE = 'editor-html-v1';
+const $ = id => document.getElementById(id);
+const TABS = ['html', 'css', 'js', 'json'];
+const LABEL = { html: 'HTML', css: 'CSS', js: 'JS', json: 'JSON' };
+const E = {};
+TABS.forEach((t, i) => {
+  const b = document.createElement('button');
+  b.className = 'tab-btn' + (i ? '' : ' active'); b.dataset.tab = t;
+  b.innerHTML = '<span class="tn">' + LABEL[t] + '</span><span class="badge" id="b-' + t + '"></span>';
+  $('tabs').appendChild(b);
+  const box = document.createElement('div');
+  box.className = 'editor-box' + (i ? '' : ' active'); box.dataset.box = t;
+  box.innerHTML = '<div class="gutter" id="' + t + '-gut"></div><div class="code"><pre class="mirror" id="' + t + '-mir" aria-hidden="true"></pre><textarea id="' + t + '-code" spellcheck="false" wrap="off"></textarea></div>';
+  $('ep').appendChild(box);
+  E[t] = { ta: $(t + '-code'), mir: $(t + '-mir'), gut: $(t + '-gut'), n: 0 };
+});
+const iframe = $('preview');
+let tab = 'html', cur = 0, M = { html: [], css: [], js: [], json: [] };
+const STORE = 'editor-html-v1';
 
-  /* ---------- Preview ---------- */
-  function buildDoc(forPreview) {
-    const hide = forPreview
-      ? '<style>*{scrollbar-width:none!important}*::-webkit-scrollbar{display:none!important;width:0!important;height:0!important}</style>'
-      : '';
-    return `<!DOCTYPE html>
-<html>
-<head>${forPreview ? '<meta name="viewport" content="width=device-width, initial-scale=1">' : ''}${hide}<style>${E.css.ta.value}</style></head>
-<body>${E.html.ta.value}
-<script>${E.js.ta.value}<\/script>
-</body>
-</html>`;
-  }
-  function update() { iframe.srcdoc = buildDoc(true); }
-
-  /* ---------- Numeração de linhas ---------- */
-  function gutter(t) {
-    const n = E[t].ta.value.split('\n').length;
-    if (E[t].n !== n) {
-      E[t].gut.textContent = Array.from({ length: n }, (_, i) => i + 1).join('\n');
-      E[t].n = n;
-    }
-    E[t].gut.scrollTop = E[t].ta.scrollTop;
-  }
-
-  /* ---------- Busca ---------- */
-  const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
-
-  const RULES = {
-    html: [
-      { cls: 'cm-comment', re: /<!--[\s\S]*?-->/ },
-      { cls: 'cm-string',  re: /"[^"]*"|'[^']*'/ },
-      { cls: 'cm-tag',     re: /<\/?[a-zA-Z][a-zA-Z0-9-]*/ },
-      { cls: 'cm-attr',    re: /[a-zA-Z-:]+(?=\s*=)/ },
-      { cls: 'cm-func',    re: /\/?>/ },
-    ],
-    css: [
-      { cls: 'cm-comment',  re: /\/\*[\s\S]*?\*\// },
-      { cls: 'cm-string',   re: /"[^"]*"|'[^']*'/ },
-      { cls: 'cm-prop',     re: /[a-zA-Z-]+(?=\s*:)/ },
-      { cls: 'cm-number',   re: /-?\d*\.?\d+(px|em|rem|%|vh|vw|s|ms|deg)?/ },
-      { cls: 'cm-selector', re: /[.#][a-zA-Z][a-zA-Z0-9_-]*/ },
-    ],
-    json: [
-      { cls: 'cm-prop',    re: /"(?:\\.|[^"\\])*"(?=\s*:)/ },
-      { cls: 'cm-string',  re: /"(?:\\.|[^"\\])*"/ },
-      { cls: 'cm-keyword', re: /\b(?:true|false|null)\b/ },
-      { cls: 'cm-number',  re: /-?\b\d+\.?\d*(?:[eE][+-]?\d+)?\b/ },
-    ],
-    js: [
-      { cls: 'cm-comment', re: /\/\/[^\n]*|\/\*[\s\S]*?\*\// },
-      { cls: 'cm-string',  re: /`(?:\\.|[^`\\])*`|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/ },
-      { cls: 'cm-keyword', re: /\b(const|let|var|function|return|if|else|for|while|do|switch|case|break|continue|new|class|extends|try|catch|finally|throw|typeof|instanceof|in|of|null|undefined|true|false|this|async|await|import|export|default|from|static|get|set|yield|delete|void)\b/ },
-      { cls: 'cm-number',  re: /\b\d+\.?\d*\b/ },
-      { cls: 'cm-func',    re: /[a-zA-Z_$][\w$]*(?=\()/ },
-    ],
-  };
-  const RX = {};
-  Object.keys(RULES).forEach(lang => {
-    RX[lang] = new RegExp(RULES[lang].map(r => '(' + r.re.source + ')').join('|'), 'g');
-  });
-  function highlight(lang, text) {
-    const rx = RX[lang];
-    rx.lastIndex = 0;
-    let out = '', last = 0, m;
-    while ((m = rx.exec(text))) {
-      if (m.index > last) out += esc(text.slice(last, m.index));
-      let gi = -1;
-      for (let i = 1; i < m.length; i++) if (m[i] !== undefined) { gi = i - 1; break; }
-      out += `<span class="${RULES[lang][gi].cls}">` + esc(m[0]) + '</span>';
-      last = rx.lastIndex;
-      if (m[0] === '') rx.lastIndex++;
-    }
-    out += esc(text.slice(last));
-    return out;
-  }
-  const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const findbar = $('findbar'), find = $('find'), rep = $('rep'), cs = $('cs');
-
-  function scan(text, q) {
-    const hay = cs.checked ? text : text.toLowerCase();
-    const needle = cs.checked ? q : q.toLowerCase();
-    const out = []; let i = 0;
-    while ((i = hay.indexOf(needle, i)) > -1) { out.push(i); i += needle.length; }
-    return out;
-  }
-  function paint() {
-    const q = find.value;
-    const searching = !findbar.hidden && !!q;
-    document.body.classList.toggle('searching', searching);
-    TABS.forEach(t => {
-      const text = E[t].ta.value, list = M[t];
-      if (searching) {
-        if (!list.length) { E[t].mir.innerHTML = ''; }
-        else {
-          let html = '', last = 0;
-          list.forEach((i, k) => {
-            html += esc(text.slice(last, i)) +
-              `<mark${t === tab && k === cur ? ' class="cur"' : ''}>` + esc(text.slice(i, i + q.length)) + '</mark>';
-            last = i + q.length;
-          });
-          E[t].mir.innerHTML = html + esc(text.slice(last)) + '\n ';
-        }
-      } else {
-        E[t].mir.innerHTML = highlight(t, text) + '\n ';
-      }
-      E[t].mir.scrollTop = E[t].ta.scrollTop; E[t].mir.scrollLeft = E[t].ta.scrollLeft;
-    });
-  }
-  function refresh() {
-    const q = find.value, open = !findbar.hidden;
-    TABS.forEach(t => {
-      M[t] = (open && q) ? scan(E[t].ta.value, q) : [];
-      $('b-' + t).textContent = M[t].length || '';
-    });
-    const n = M[tab].length;
-    if (cur >= n) cur = n - 1;
-    if (cur < 0 && n) cur = 0;
-    $('find-info').textContent = !q ? '' : n ? `${cur + 1} de ${n}` : 'Sem resultados aqui';
-    paint();
-  }
-  function reveal() {
-    if (cur < 0 || !M[tab].length) return;
-    const t = E[tab].ta, i = M[tab][cur], before = t.value.slice(0, i);
-    const line = (before.match(/\n/g) || []).length, col = i - before.lastIndexOf('\n') - 1;
-    t.scrollTop = Math.max(0, line * 20 - t.clientHeight / 2);
-    t.scrollLeft = col * 7.8 > t.clientWidth - 60 ? col * 7.8 - t.clientWidth / 2 : 0;
-  }
-  function go(dir) {
-    const n = M[tab].length;
-    if (!n) return;
-    cur = (cur + dir + n) % n;
-    refresh(); reveal();
-  }
-  function insert(t, s) {
-    t.focus();
-    if (!document.execCommand('insertText', false, s)) {
-      t.setRangeText(s, t.selectionStart, t.selectionEnd, 'end');
-      t.dispatchEvent(new Event('input'));
-    }
-  }
-  function replaceOne() {
-    const n = M[tab].length;
-    if (!n || cur < 0) return;
-    const t = E[tab].ta, i = M[tab][cur];
-    t.focus(); t.setSelectionRange(i, i + find.value.length);
-    insert(t, rep.value);
-    refresh(); reveal();
-  }
-  function replaceAll() {
-    const q = find.value, n = M[tab].length;
-    if (!q || !n) return;
-    const t = E[tab].ta;
-    const nv = t.value.replace(new RegExp(escRe(q), cs.checked ? 'g' : 'gi'), () => rep.value);
-    t.focus(); t.select(); insert(t, nv);
-    flash(`${n} substituições em ${tab.toUpperCase()}`);
-  }
-  function openFind() {
-    findbar.hidden = false;
-    const t = E[tab].ta, sel = t.value.slice(t.selectionStart, t.selectionEnd);
-    if (sel && !sel.includes('\n')) find.value = sel;
-    find.focus(); find.select(); refresh();
-  }
-  function closeFind() { findbar.hidden = true; refresh(); E[tab].ta.focus(); }
-
-  $('find-btn').onclick = () => findbar.hidden ? openFind() : closeFind();
-  $('close-find').onclick = closeFind;
-  $('next').onclick = () => go(1);
-  $('prev').onclick = () => go(-1);
-  $('rep1').onclick = replaceOne;
-  $('repall').onclick = replaceAll;
-  find.addEventListener('input', () => { cur = 0; refresh(); reveal(); });
-  cs.addEventListener('change', () => { cur = 0; refresh(); reveal(); });
-  find.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); go(e.shiftKey ? -1 : 1); } });
-  document.addEventListener('keydown', e => {
-    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') { e.preventDefault(); openFind(); }
-    else if (e.key === 'Escape' && !findbar.hidden) closeFind();
-  });
-
-  /* ---------- Edição ---------- */
-  let saveTimer;
-  function flash(msg) { $('st-save').textContent = msg; }
-  function save() {
-    try {
-      localStorage.setItem(STORE, JSON.stringify({ html: E.html.ta.value, css: E.css.ta.value, js: E.js.ta.value, json: E.json.ta.value }));
-      flash('Salvo automaticamente');
-    } catch (e) { flash(''); }
-  }
-  function edited(t) {
-    gutter(t); refresh(); update();
-    $('st-len').textContent = E[tab].ta.value.length + ' caracteres';
-    flash('Editando…'); clearTimeout(saveTimer); saveTimer = setTimeout(save, 500);
-  }
+/* ---------- Arquivos carregados (site de 1 arquivo ou de vários) ---------- */
+const FILES = { css: {}, js: {}, json: {} };   // arquivos carregados, por nome
+const NAMES = { html: '', css: '', js: '', json: '' };   // nome do arquivo que está em cada aba
+const SHOW = { html: '', css: '', js: '', json: '' };   // nome original de cada aba
+const DEFNAME = { html: 'index.html', css: 'style.css', js: 'script.js', json: 'dados.json' };
+function labelTabs() {
   TABS.forEach(t => {
-    const ta = E[t].ta;
-    ta.addEventListener('input', () => edited(t));
-    ta.addEventListener('scroll', () => {
-      E[t].mir.scrollTop = ta.scrollTop; E[t].mir.scrollLeft = ta.scrollLeft; E[t].gut.scrollTop = ta.scrollTop;
-    });
-    ta.addEventListener('keydown', e => {
-      if (e.key === 'Tab' && !e.shiftKey) { e.preventDefault(); insert(ta, '  '); }
-    });
+    const el = document.querySelector('.tab-btn[data-tab="' + t + '"] .tn');
+    el.textContent = SHOW[t] || LABEL[t];
   });
-  document.addEventListener('selectionchange', () => {
-    const t = document.activeElement;
-    if (!t || t.tagName !== 'TEXTAREA') return;
-    const before = t.value.slice(0, t.selectionStart);
-    $('st-pos').textContent = `Ln ${before.split('\n').length}, Col ${before.length - before.lastIndexOf('\n')}`;
-  });
+}
+const low = s => String(s || '').toLowerCase();
+const baseName = p => low(String(p).split('#')[0].split('?')[0].split('/').pop());
+const isLocal = p => !!p && !/^([a-z][a-z0-9+.-]*:)?\/\//i.test(p) && !/^(data|blob|mailto|javascript|tel):/i.test(p);
+const safeJson = v => JSON.stringify(v).replace(/</g, '\\u003c');
 
-  /* ---------- Abas ---------- */
-  function setTab(name) {
-    tab = name; cur = 0;
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
-    document.querySelectorAll('.editor-box').forEach(b => b.classList.toggle('active', b.dataset.box === name));
-    $('st-len').textContent = E[name].ta.value.length + ' caracteres';
-    gutter(name); refresh();
-  }
-  document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => setTab(btn.dataset.tab)));
-
-  /* ---------- Carregar / baixar ---------- */
-  const fileInput = $('file-input'), uploadStatus = $('upload-status');
-  $('upload-btn').addEventListener('click', () => fileInput.click());
-  fileInput.addEventListener('change', async e => {
-    const files = Array.from(e.target.files);
-    if (!files.length) return;
-    const loaded = [];
-    for (const file of files) {
-      const text = await file.text();
-      const ext = file.name.split('.').pop().toLowerCase();
-      const key = ext === 'html' || ext === 'htm' ? 'html' : ext === 'css' ? 'css' : ext === 'js' ? 'js' : ext === 'json' ? 'json' : null;
-      if (key) { E[key].ta.value = text; loaded.push(key.toUpperCase()); gutter(key); }
+// faz o fetch('arquivo.json') do site funcionar dentro do preview
+function jsonShim(F, D) {
+  var nm = function (u) { return String(u).split('#')[0].split('?')[0].split('/').pop().toLowerCase(); };
+  var rel = function (u) { return !/^([a-z][a-z0-9+.-]*:)?\/\//i.test(u) && !/^(data|blob):/i.test(u); };
+  var of = window.fetch;
+  window.fetch = function (u) {
+    var url = (u && u.url) ? u.url : String(u);
+    if (/\.json$/i.test(nm(url)) && rel(url)) {
+      var k = nm(url), t = (k in F) ? F[k] : D;
+      if (t != null) return Promise.resolve(new Response(t, { status: 200, headers: { 'Content-Type': 'application/json' } }));
     }
-    if (loaded.length && loaded.every(k => k === 'JSON')) setTab('json');
-    refresh(); update(); save();
-    uploadStatus.textContent = loaded.length ? `Carregado: ${loaded.join(', ')}` : 'Nenhum arquivo .html/.css/.js/.json reconhecido';
-    setTimeout(() => { uploadStatus.textContent = ''; }, 4000);
-    fileInput.value = '';
-  });
-  $('download-btn').addEventListener('click', () => {
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([buildDoc(false)], { type: 'text/html' }));
-    a.download = 'pagina.html';
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-  });
+    return of.apply(this, arguments);
+  };
+}
 
-  /* ---------- Limpar / Desfazer ---------- */
-  let backup = null;
-  const undoBtn = $('undo-clear-btn');
-  $('clear-btn').addEventListener('click', () => {
-    if (!TABS.some(t => E[t].ta.value)) { flash('O editor já está vazio'); return; }
-    backup = { html: E.html.ta.value, css: E.css.ta.value, js: E.js.ta.value, json: E.json.ta.value };
-    TABS.forEach(t => { E[t].ta.value = ''; gutter(t); });
-    refresh(); update(); save();
-    $('st-len').textContent = '0 caracteres';
-    undoBtn.hidden = false;
-    flash('Editor limpo');
-  });
-  undoBtn.addEventListener('click', () => {
-    if (!backup) return;
-    TABS.forEach(t => { E[t].ta.value = backup[t]; gutter(t); });
-    backup = null; undoBtn.hidden = true;
-    refresh(); update(); save();
-    $('st-len').textContent = E[tab].ta.value.length + ' caracteres';
-    flash('Conteúdo restaurado');
-  });
-  // ao digitar depois de limpar, o Desfazer some para não sobrescrever o texto novo
-  TABS.forEach(t => E[t].ta.addEventListener('input', () => { if (backup) { backup = null; undoBtn.hidden = true; } }));
-
-  /* ---------- Celular: relógio e ajuste automático ---------- */
-  const phone = $('phone'), stage = $('stage'), pv = $('pv');
-  function tick() {
-    const d = new Date();
-    $('clock').textContent = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+/* ---------- Preview ---------- */
+function buildDoc(forPreview) {
+  const tabs = { css: E.css.ta.value, js: E.js.ta.value, json: E.json.ta.value };
+  let html = E.html.ta.value;
+  const used = { css: false, js: false };
+  function content(type, ref) {
+    const n = baseName(ref); let v = null;
+    if (n && n === NAMES[type]) v = tabs[type];
+    else if (n && (n in FILES[type])) v = FILES[type][n];
+    if (v == null && tabs[type] && !used[type]) v = tabs[type];
+    if (v != null && v === tabs[type]) used[type] = true;
+    return v;
   }
-  tick(); setInterval(tick, 20000);
-
-  // o celular sempre cresce/encolhe para caber no espaço que sobrou
-  function fitZoom() {
-    const z = Math.min((stage.clientWidth - 26) / phone.offsetWidth, stage.clientHeight / phone.offsetHeight, 3);
-    phone.style.zoom = Math.max(0.2, z || 1);
-  }
-  new ResizeObserver(fitZoom).observe(stage);
-  window.addEventListener('resize', fitZoom);
-
-  /* ---------- Barra de rolagem fora do celular ---------- */
-  const vs = $('vs'), vt = $('vt');
-  let sc = null;
-  function findScroller() {
-    const d = iframe.contentDocument, w = iframe.contentWindow;
-    if (!d || !w) return null;
-    let best = d.scrollingElement || d.documentElement, bs = best.scrollHeight - best.clientHeight;
-    d.querySelectorAll('*').forEach(el => {
-      const o = w.getComputedStyle(el).overflowY;
-      const x = el.scrollHeight - el.clientHeight;
-      if ((o === 'auto' || o === 'scroll') && x > bs) { best = el; bs = x; }
-    });
-    return best;
-  }
-  function syncBar() {
-    const max = sc ? sc.scrollHeight - sc.clientHeight : 0;
-    if (max <= 1) { vt.style.display = 'none'; return; }
-    const h = vs.clientHeight, th = Math.max(30, h * sc.clientHeight / sc.scrollHeight);
-    vt.style.display = 'block'; vt.style.height = th + 'px';
-    vt.style.top = (sc.scrollTop / max * (h - th)) + 'px';
-  }
-  iframe.addEventListener('load', () => {
-    sc = findScroller(); syncBar();
-    setTimeout(() => { sc = findScroller(); syncBar(); }, 600);
-    const d = iframe.contentDocument;
-    if (d) d.addEventListener('scroll', e => {
-      sc = (e.target === d) ? (d.scrollingElement || d.documentElement) : e.target; syncBar();
-    }, true);
+  // <link rel="stylesheet" href="style.css"> vira <style> com o CSS
+  html = html.replace(/<link\b[^>]*>/gi, tag => {
+    if (!/rel\s*=\s*["']?stylesheet/i.test(tag)) return tag;
+    const m = tag.match(/href\s*=\s*["']([^"']+)["']/i);
+    if (!m || !isLocal(m[1])) return tag;
+    const c = content('css', m[1]);
+    return c == null ? tag : '<style>' + c.replace(/<\/(style)/gi, '<\\/$1') + '</style>';
   });
-  function dragTo(y) {
-    if (!sc) return;
-    const r = vs.getBoundingClientRect(), th = vt.offsetHeight, max = sc.scrollHeight - sc.clientHeight;
-    const f = Math.min(1, Math.max(0, (y - r.top - th / 2) / (r.height - th)));
-    sc.scrollTop = f * max;
+  // script com src local (script.js) vira script com o JS dentro
+  const late = [];
+  html = html.replace(/<script\b([^>]*?)\bsrc\s*=\s*["']([^"']+)["']([^>]*)>\s*<\/script>/gi, (all, a, src, b) => {
+    if (!isLocal(src)) return all;
+    const c = content('js', src);
+    if (c == null) return all;
+    const raw = a + ' ' + b;
+    const defer = /\bdefer\b/i.test(raw) && !/type\s*=\s*["']?module/i.test(raw);
+    const attrs = raw.replace(/\s*\b(defer|async)\b/gi, '').replace(/\s+$/, '');
+    const tag = '<script' + attrs + '>' + c.replace(/<\/(script)/gi, '<\\/$1') + '<\/script>';
+    if (defer) { late.push(tag); return ''; }
+    return tag;
+  });
+  // HTML solto (sem <html>) ganha uma moldura
+  if (!/<html[\s>]|<!doctype/i.test(html)) html = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body>' + html + '\n</body></html>';
+  const inHead = s => {
+    if (/<head(\s[^>]*)?>/i.test(html)) html = html.replace(/<head(\s[^>]*)?>/i, m => m + s);
+    else if (/<html[^>]*>/i.test(html)) html = html.replace(/<html[^>]*>/i, m => m + '<head>' + s + '</head>');
+    else html = html.replace(/^(\s*<!doctype[^>]*>)?/i, m => m + '<head>' + s + '</head>');
+  };
+  const inEnd = s => {
+    const i = html.toLowerCase().lastIndexOf('</body>');
+    html = i < 0 ? html + s : html.slice(0, i) + s + html.slice(i);
+  };
+  // CSS/JS das abas que o HTML não chamou entram direto
+  if (tabs.css.trim() && !used.css) inHead('<style>' + tabs.css.replace(/<\/(style)/gi, '<\\/$1') + '</style>');
+  late.forEach(inEnd);
+  if (tabs.js.trim() && !used.js) inEnd('<script>' + tabs.js.replace(/<\/(script)/gi, '<\\/$1') + '<\/script>');
+  if (forPreview) {
+    inHead('<style>*{scrollbar-width:none!important}*::-webkit-scrollbar{display:none!important;width:0!important;height:0!important}</style>');
+    if (!/name\s*=\s*["']viewport/i.test(html)) inHead('<meta name="viewport" content="width=device-width, initial-scale=1">');
   }
-  vs.addEventListener('pointerdown', e => { vs.setPointerCapture(e.pointerId); vs.classList.add('drag'); dragTo(e.clientY); });
-  vs.addEventListener('pointermove', e => { if (vs.hasPointerCapture(e.pointerId)) dragTo(e.clientY); });
-  vs.addEventListener('pointerup', () => vs.classList.remove('drag'));
-  vs.addEventListener('pointercancel', () => vs.classList.remove('drag'));
-  new ResizeObserver(syncBar).observe(vs);
+  // JSON: arquivos carregados + o que está na aba JSON
+  const F = Object.assign({}, FILES.json);
+  if (NAMES.json && tabs.json) F[NAMES.json] = tabs.json;
+  const D = tabs.json.trim() ? tabs.json : null;
+  if (Object.keys(F).length || D) inHead('<script>(' + jsonShim.toString() + ')(' + safeJson(F) + ',' + safeJson(D) + ')<\/script>');
+  return html;
+}
+function update() { iframe.srcdoc = buildDoc(true); }
 
-  /* ---------- Divisor arrastável ---------- */
-  const divider = $('divider'), main = $('main');
-  divider.addEventListener('pointerdown', e => {
-    divider.setPointerCapture(e.pointerId);
-    divider.classList.add('drag'); document.body.classList.add('dragging');
-  });
-  divider.addEventListener('pointermove', e => {
-    if (!divider.hasPointerCapture(e.pointerId)) return;
-    const r = main.getBoundingClientRect();
-    const vertical = getComputedStyle(main).flexDirection === 'column';
-    const total = vertical ? r.height : r.width;
-    const pos = vertical ? e.clientY - r.top : e.clientX - r.left;
-    const size = Math.min(total - 90, Math.max(110, total - pos - 5));
-    pv.style.flex = `0 0 ${size}px`;
-  });
-  const endDrag = e => { divider.classList.remove('drag'); document.body.classList.remove('dragging'); };
-  divider.addEventListener('pointerup', endDrag);
-  divider.addEventListener('pointercancel', endDrag);
+/* ---------- Numeração de linhas ---------- */
+function gutter(t) {
+  const n = E[t].ta.value.split('\n').length;
+  if (E[t].n !== n) { E[t].gut.textContent = Array.from({ length: n }, (_, i) => i + 1).join('\n'); E[t].n = n; }
+  E[t].gut.scrollTop = E[t].ta.scrollTop;
+}
 
-  /* ---------- Início ---------- */
+/* ---------- Cores do código e busca ---------- */
+const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+const RULES = {
+  html: [
+    { cls: 'cm-comment', re: /<!--[\s\S]*?-->/ }, { cls: 'cm-string', re: /"[^"]*"|'[^']*'/ },
+    { cls: 'cm-tag', re: /<\/?[a-zA-Z][a-zA-Z0-9-]*/ }, { cls: 'cm-attr', re: /[a-zA-Z-:]+(?=\s*=)/ }, { cls: 'cm-func', re: /\/?>/ },
+  ],
+  css: [
+    { cls: 'cm-comment', re: /\/\*[\s\S]*?\*\// }, { cls: 'cm-string', re: /"[^"]*"|'[^']*'/ },
+    { cls: 'cm-prop', re: /[a-zA-Z-]+(?=\s*:)/ }, { cls: 'cm-number', re: /-?\d*\.?\d+(px|em|rem|%|vh|vw|s|ms|deg)?/ },
+    { cls: 'cm-selector', re: /[.#][a-zA-Z][a-zA-Z0-9_-]*/ },
+  ],
+  json: [
+    { cls: 'cm-prop', re: /"(?:\\.|[^"\\])*"(?=\s*:)/ }, { cls: 'cm-string', re: /"(?:\\.|[^"\\])*"/ },
+    { cls: 'cm-keyword', re: /\b(?:true|false|null)\b/ }, { cls: 'cm-number', re: /-?\b\d+\.?\d*(?:[eE][+-]?\d+)?\b/ },
+  ],
+  js: [
+    { cls: 'cm-comment', re: /\/\/[^\n]*|\/\*[\s\S]*?\*\// },
+    { cls: 'cm-string', re: /`(?:\\.|[^`\\])*`|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/ },
+    { cls: 'cm-keyword', re: /\b(const|let|var|function|return|if|else|for|while|do|switch|case|break|continue|new|class|extends|try|catch|finally|throw|typeof|instanceof|in|of|null|undefined|true|false|this|async|await|import|export|default|from|static|get|set|yield|delete|void)\b/ },
+    { cls: 'cm-number', re: /\b\d+\.?\d*\b/ }, { cls: 'cm-func', re: /[a-zA-Z_$][\w$]*(?=\()/ },
+  ],
+};
+const RX = {};
+Object.keys(RULES).forEach(l => { RX[l] = new RegExp(RULES[l].map(r => '(' + r.re.source + ')').join('|'), 'g'); });
+function highlight(lang, text) {
+  const rx = RX[lang]; rx.lastIndex = 0;
+  let out = '', last = 0, m;
+  while ((m = rx.exec(text))) {
+    if (m.index > last) out += esc(text.slice(last, m.index));
+    let gi = -1;
+    for (let i = 1; i < m.length; i++) if (m[i] !== undefined) { gi = i - 1; break; }
+    out += `<span class="${RULES[lang][gi].cls}">` + esc(m[0]) + '</span>';
+    last = rx.lastIndex;
+    if (m[0] === '') rx.lastIndex++;
+  }
+  return out + esc(text.slice(last));
+}
+const escRe = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const findbar = $('findbar'), find = $('find'), rep = $('rep'), cs = $('cs');
+function scan(text, q) {
+  const hay = cs.checked ? text : text.toLowerCase(), needle = cs.checked ? q : q.toLowerCase();
+  const out = []; let i = 0;
+  while ((i = hay.indexOf(needle, i)) > -1) { out.push(i); i += needle.length; }
+  return out;
+}
+function paint() {
+  const q = find.value, searching = !findbar.hidden && !!q;
+  document.body.classList.toggle('searching', searching);
+  TABS.forEach(t => {
+    const text = E[t].ta.value, list = M[t];
+    if (searching) {
+      if (!list.length) E[t].mir.innerHTML = '';
+      else {
+        let html = '', last = 0;
+        list.forEach((i, k) => {
+          html += esc(text.slice(last, i)) + `<mark${t === tab && k === cur ? ' class="cur"' : ''}>` + esc(text.slice(i, i + q.length)) + '</mark>';
+          last = i + q.length;
+        });
+        E[t].mir.innerHTML = html + esc(text.slice(last)) + '\n ';
+      }
+    } else E[t].mir.innerHTML = highlight(t, text) + '\n ';
+    E[t].mir.scrollTop = E[t].ta.scrollTop; E[t].mir.scrollLeft = E[t].ta.scrollLeft;
+  });
+}
+function refresh() {
+  const q = find.value, open = !findbar.hidden;
+  TABS.forEach(t => { M[t] = (open && q) ? scan(E[t].ta.value, q) : []; $('b-' + t).textContent = M[t].length || ''; });
+  const n = M[tab].length;
+  if (cur >= n) cur = n - 1;
+  if (cur < 0 && n) cur = 0;
+  $('find-info').textContent = !q ? '' : n ? `${cur + 1} de ${n}` : 'Sem resultados aqui';
+  paint();
+}
+function reveal() {
+  if (cur < 0 || !M[tab].length) return;
+  const t = E[tab].ta, i = M[tab][cur], before = t.value.slice(0, i);
+  const line = (before.match(/\n/g) || []).length, col = i - before.lastIndexOf('\n') - 1;
+  t.scrollTop = Math.max(0, line * 20 - t.clientHeight / 2);
+  t.scrollLeft = col * 7.8 > t.clientWidth - 60 ? col * 7.8 - t.clientWidth / 2 : 0;
+}
+function go(dir) { const n = M[tab].length; if (!n) return; cur = (cur + dir + n) % n; refresh(); reveal(); }
+function insert(t, s) {
+  t.focus();
+  if (!document.execCommand('insertText', false, s)) { t.setRangeText(s, t.selectionStart, t.selectionEnd, 'end'); t.dispatchEvent(new Event('input')); }
+}
+function replaceOne() {
+  if (!M[tab].length || cur < 0) return;
+  const t = E[tab].ta, i = M[tab][cur];
+  t.focus(); t.setSelectionRange(i, i + find.value.length); insert(t, rep.value); refresh(); reveal();
+}
+function replaceAll() {
+  const q = find.value, n = M[tab].length;
+  if (!q || !n) return;
+  const t = E[tab].ta;
+  const nv = t.value.replace(new RegExp(escRe(q), cs.checked ? 'g' : 'gi'), () => rep.value);
+  t.focus(); t.select(); insert(t, nv);
+  flash(`${n} substituições em ${tab.toUpperCase()}`);
+}
+function openFind() {
+  findbar.hidden = false;
+  const t = E[tab].ta, sel = t.value.slice(t.selectionStart, t.selectionEnd);
+  if (sel && !sel.includes('\n')) find.value = sel;
+  find.focus(); find.select(); refresh();
+}
+function closeFind() { findbar.hidden = true; refresh(); E[tab].ta.focus(); }
+$('find-btn').onclick = () => findbar.hidden ? openFind() : closeFind();
+$('close-find').onclick = closeFind;
+$('next').onclick = () => go(1); $('prev').onclick = () => go(-1);
+$('rep1').onclick = replaceOne; $('repall').onclick = replaceAll;
+find.addEventListener('input', () => { cur = 0; refresh(); reveal(); });
+cs.addEventListener('change', () => { cur = 0; refresh(); reveal(); });
+find.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); go(e.shiftKey ? -1 : 1); } });
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') { e.preventDefault(); openFind(); }
+  else if (e.key === 'Escape' && !findbar.hidden) closeFind();
+});
+
+/* ---------- Edição ---------- */
+let saveTimer;
+function flash(msg) { $('st-save').textContent = msg; }
+function save() {
   try {
-    const s = JSON.parse(localStorage.getItem(STORE) || 'null');
-    if (s) TABS.forEach(t => { E[t].ta.value = s[t] || ''; });
-  } catch (e) {}
-  TABS.forEach(gutter);
-  refresh();
-  $('st-len').textContent = E.html.ta.value.length + ' caracteres';
-  update();
-  fitZoom();
+    localStorage.setItem(STORE, JSON.stringify({ html: E.html.ta.value, css: E.css.ta.value, js: E.js.ta.value, json: E.json.ta.value }));
+    flash('Salvo automaticamente');
+  } catch (e) { flash(''); }
+}
+function edited(t) {
+  gutter(t); refresh(); update();
+  $('st-len').textContent = E[tab].ta.value.length + ' caracteres';
+  flash('Editando…'); clearTimeout(saveTimer); saveTimer = setTimeout(save, 500);
+}
+TABS.forEach(t => {
+  const ta = E[t].ta;
+  ta.addEventListener('input', () => edited(t));
+  ta.addEventListener('scroll', () => { E[t].mir.scrollTop = ta.scrollTop; E[t].mir.scrollLeft = ta.scrollLeft; E[t].gut.scrollTop = ta.scrollTop; });
+  ta.addEventListener('keydown', e => { if (e.key === 'Tab' && !e.shiftKey) { e.preventDefault(); insert(ta, '  '); } });
+});
+document.addEventListener('selectionchange', () => {
+  const t = document.activeElement;
+  if (!t || t.tagName !== 'TEXTAREA') return;
+  const before = t.value.slice(0, t.selectionStart);
+  $('st-pos').textContent = `Ln ${before.split('\n').length}, Col ${before.length - before.lastIndexOf('\n')}`;
+});
+
+/* ---------- Abas ---------- */
+function setTab(name) {
+  tab = name; cur = 0;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.editor-box').forEach(b => b.classList.toggle('active', b.dataset.box === name));
+  $('st-len').textContent = E[name].ta.value.length + ' caracteres';
+  gutter(name); refresh();
+}
+document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => setTab(btn.dataset.tab)));
+
+/* ---------- Carregar / baixar ---------- */
+const fileInput = $('file-input'), uploadStatus = $('upload-status');
+$('upload-btn').addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', async e => {
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+  const loaded = [];
+  for (const file of files) {
+    const text = await file.text();
+    const ext = file.name.split('.').pop().toLowerCase();
+    const key = ext === 'html' || ext === 'htm' ? 'html' : ext === 'css' ? 'css' : ext === 'js' ? 'js' : ext === 'json' ? 'json' : null;
+    if (!key) continue;
+    SHOW[key] = file.name; NAMES[key] = low(file.name);
+    if (key !== 'html') FILES[key][low(file.name)] = text;
+    E[key].ta.value = text; loaded.push(key.toUpperCase() + ' (' + file.name + ')'); gutter(key);
+  }
+  if (loaded.length && loaded.every(k => k.startsWith('JSON'))) setTab('json');
+  labelTabs();
+  refresh(); update(); save();
+  uploadStatus.textContent = loaded.length ? `Carregado: ${loaded.join(', ')}` : 'Nenhum arquivo .html/.css/.js/.json reconhecido';
+  setTimeout(() => { uploadStatus.textContent = ''; }, 9000);
+  fileInput.value = '';
+});
+$('download-btn').addEventListener('click', () => {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([buildDoc(false)], { type: 'text/html' }));
+  a.download = 'pagina.html'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+
+$('download-tab-btn').addEventListener('click', () => {
+  const MIME = { html: 'text/html', css: 'text/css', js: 'text/javascript', json: 'application/json' };
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([E[tab].ta.value], { type: MIME[tab] }));
+  a.download = SHOW[tab] || DEFNAME[tab]; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+
+/* ---------- Limpar / Desfazer ---------- */
+let backup = null;
+const undoBtn = $('undo-clear-btn');
+$('clear-btn').addEventListener('click', () => {
+  if (!TABS.some(t => E[t].ta.value)) { flash('O editor já está vazio'); return; }
+  backup = { html: E.html.ta.value, css: E.css.ta.value, js: E.js.ta.value, json: E.json.ta.value, F: JSON.stringify(FILES), N: JSON.stringify(NAMES), S: JSON.stringify(SHOW) };
+  TABS.forEach(t => { E[t].ta.value = ''; gutter(t); });
+  TABS.forEach(k => { if (FILES[k]) FILES[k] = {}; NAMES[k] = ''; SHOW[k] = ''; });
+  labelTabs();
+  refresh(); update(); save();
+  $('st-len').textContent = '0 caracteres';
+  undoBtn.hidden = false; flash('Editor limpo');
+});
+undoBtn.addEventListener('click', () => {
+  if (!backup) return;
+  TABS.forEach(t => { E[t].ta.value = backup[t]; gutter(t); });
+  Object.assign(FILES, JSON.parse(backup.F)); Object.assign(NAMES, JSON.parse(backup.N)); Object.assign(SHOW, JSON.parse(backup.S)); labelTabs();
+  backup = null; undoBtn.hidden = true;
+  refresh(); update(); save();
+  $('st-len').textContent = E[tab].ta.value.length + ' caracteres';
+  flash('Conteúdo restaurado');
+});
+TABS.forEach(t => E[t].ta.addEventListener('input', () => { if (backup) { backup = null; undoBtn.hidden = true; } }));
+
+/* ---------- Celular: relógio e ajuste automático ---------- */
+const phone = $('phone'), stage = $('stage'), pv = $('pv');
+function tick() { const d = new Date(); $('clock').textContent = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+tick(); setInterval(tick, 20000);
+function fitZoom() {
+  const z = Math.min((stage.clientWidth - 26) / phone.offsetWidth, stage.clientHeight / phone.offsetHeight, 3);
+  phone.style.zoom = Math.max(0.2, z || 1);
+}
+new ResizeObserver(fitZoom).observe(stage);
+window.addEventListener('resize', fitZoom);
+
+/* ---------- Barra de rolagem fora do celular ---------- */
+const vs = $('vs'), vt = $('vt');
+let sc = null;
+function findScroller() {
+  const d = iframe.contentDocument, w = iframe.contentWindow;
+  if (!d || !w) return null;
+  let best = d.scrollingElement || d.documentElement, bs = best.scrollHeight - best.clientHeight;
+  d.querySelectorAll('*').forEach(el => {
+    const o = w.getComputedStyle(el).overflowY, x = el.scrollHeight - el.clientHeight;
+    if ((o === 'auto' || o === 'scroll') && x > bs) { best = el; bs = x; }
+  });
+  return best;
+}
+function syncBar() {
+  const max = sc ? sc.scrollHeight - sc.clientHeight : 0;
+  if (max <= 1) { vt.style.display = 'none'; return; }
+  const h = vs.clientHeight, th = Math.max(30, h * sc.clientHeight / sc.scrollHeight);
+  vt.style.display = 'block'; vt.style.height = th + 'px';
+  vt.style.top = (sc.scrollTop / max * (h - th)) + 'px';
+}
+iframe.addEventListener('load', () => {
+  sc = findScroller(); syncBar();
+  setTimeout(() => { sc = findScroller(); syncBar(); }, 600);
+  const d = iframe.contentDocument;
+  if (d) d.addEventListener('scroll', e => { sc = (e.target === d) ? (d.scrollingElement || d.documentElement) : e.target; syncBar(); }, true);
+});
+function dragTo(y) {
+  if (!sc) return;
+  const r = vs.getBoundingClientRect(), th = vt.offsetHeight, max = sc.scrollHeight - sc.clientHeight;
+  sc.scrollTop = Math.min(1, Math.max(0, (y - r.top - th / 2) / (r.height - th))) * max;
+}
+vs.addEventListener('pointerdown', e => { vs.setPointerCapture(e.pointerId); vs.classList.add('drag'); dragTo(e.clientY); });
+vs.addEventListener('pointermove', e => { if (vs.hasPointerCapture(e.pointerId)) dragTo(e.clientY); });
+vs.addEventListener('pointerup', () => vs.classList.remove('drag'));
+vs.addEventListener('pointercancel', () => vs.classList.remove('drag'));
+new ResizeObserver(syncBar).observe(vs);
+
+/* ---------- Divisor arrastável ---------- */
+const divider = $('divider'), main = $('main');
+divider.addEventListener('pointerdown', e => { divider.setPointerCapture(e.pointerId); divider.classList.add('drag'); document.body.classList.add('dragging'); });
+divider.addEventListener('pointermove', e => {
+  if (!divider.hasPointerCapture(e.pointerId)) return;
+  const r = main.getBoundingClientRect(), vertical = getComputedStyle(main).flexDirection === 'column';
+  const total = vertical ? r.height : r.width, pos = vertical ? e.clientY - r.top : e.clientX - r.left;
+  pv.style.flex = `0 0 ${Math.min(total - 90, Math.max(110, total - pos - 5))}px`;
+});
+const endDrag = () => { divider.classList.remove('drag'); document.body.classList.remove('dragging'); };
+divider.addEventListener('pointerup', endDrag); divider.addEventListener('pointercancel', endDrag);
+
+/* ---------- Início ---------- */
+try { const s = JSON.parse(localStorage.getItem(STORE) || 'null'); if (s) TABS.forEach(t => { E[t].ta.value = s[t] || ''; }); } catch (e) {}
+TABS.forEach(gutter); refresh();
+$('st-len').textContent = E.html.ta.value.length + ' caracteres';
+update(); fitZoom();
 </script>
 <script>
 /* ---------- Notificações do site (avisos.json) ---------- */
 (function () {
-  const g = id => document.getElementById(id);
-  const modal = g('av-modal');
-  const KEY = 'editor-avisos-v1';
-  let lista = [];
-  let editId = null;
-
-  function hoje() { return new Date().toLocaleDateString('pt-BR'); }
+  const g = id => document.getElementById(id), modal = g('av-modal'), KEY = 'editor-avisos-v1';
+  let lista = [], editId = null;
+  const hoje = () => new Date().toLocaleDateString('pt-BR');
   function msg(id, texto, tipo) { const el = g(id); el.textContent = texto || ''; el.className = 'av-hint' + (tipo ? ' ' + tipo : ''); }
-
   function normalizar(arr) {
     const out = [];
     (Array.isArray(arr) ? arr : []).forEach((a, i) => {
       if (!a || typeof a !== 'object') return;
       const id = Number(a.id);
-      out.push({
-        id: Number.isFinite(id) && id > 0 ? id : i + 1,
-        titulo: String(a.titulo == null ? '' : a.titulo),
-        mensagem: String(a.mensagem == null ? '' : a.mensagem),
-        data: String(a.data == null ? '' : a.data)
-      });
+      out.push({ id: Number.isFinite(id) && id > 0 ? id : i + 1, titulo: String(a.titulo == null ? '' : a.titulo), mensagem: String(a.mensagem == null ? '' : a.mensagem), data: String(a.data == null ? '' : a.data) });
     });
     return out.sort((x, y) => y.id - x.id);
   }
-  function guardar() { try { localStorage.setItem(KEY, JSON.stringify(lista)); } catch (e) {} }
-  function carregarLocal() {
-    try { lista = normalizar(JSON.parse(localStorage.getItem(KEY) || '[]')); } catch (e) { lista = []; }
-  }
-  function proximoId() { return lista.reduce((m, a) => Math.max(m, a.id), 0) + 1; }
-  function jsonTexto() { return JSON.stringify({ avisos: lista }, null, 2) + '\n'; }
+  const guardar = () => { try { localStorage.setItem(KEY, JSON.stringify(lista)); } catch (e) {} };
+  const proximoId = () => lista.reduce((m, a) => Math.max(m, a.id), 0) + 1;
+  const jsonTexto = () => JSON.stringify({ avisos: lista }, null, 2) + '\n';
+  try { lista = normalizar(JSON.parse(localStorage.getItem(KEY) || '[]')); } catch (e) { lista = []; }
 
   function desenhar() {
-    const box = g('av-list');
-    box.textContent = '';
-    if (!lista.length) {
-      const v = document.createElement('div');
-      v.className = 'av-empty';
-      v.textContent = 'Nenhuma notificação na lista.';
-      box.appendChild(v);
-    }
+    const box = g('av-list'); box.textContent = '';
+    if (!lista.length) { const v = document.createElement('div'); v.className = 'av-empty'; v.textContent = 'Nenhuma notificação na lista.'; box.appendChild(v); }
     lista.forEach(a => {
-      const it = document.createElement('div');
-      it.className = 'av-item' + (a.id === editId ? ' editing' : '');
+      const it = document.createElement('div'); it.className = 'av-item' + (a.id === editId ? ' editing' : '');
       const t = document.createElement('b'); t.textContent = '#' + a.id + '  ' + (a.titulo || 'Aviso');
       const p = document.createElement('p'); p.textContent = a.mensagem;
       it.append(t, p);
       if (a.data) { const s = document.createElement('small'); s.textContent = a.data; it.appendChild(s); }
       const row = document.createElement('div'); row.className = 'av-row';
-      const be = document.createElement('button'); be.className = 'btn'; be.type = 'button'; be.textContent = 'Editar';
-      be.addEventListener('click', () => iniciarEdicao(a.id));
-      const bd = document.createElement('button'); bd.className = 'btn danger'; bd.type = 'button'; bd.textContent = 'Apagar';
-      bd.addEventListener('click', () => apagar(a.id));
-      row.append(be, bd); it.appendChild(row);
-      box.appendChild(it);
+      const be = document.createElement('button'); be.className = 'btn'; be.type = 'button'; be.textContent = 'Editar'; be.addEventListener('click', () => iniciarEdicao(a.id));
+      const bd = document.createElement('button'); bd.className = 'btn danger'; bd.type = 'button'; bd.textContent = 'Apagar'; bd.addEventListener('click', () => apagar(a.id));
+      row.append(be, bd); it.appendChild(row); box.appendChild(it);
     });
     g('av-json').value = jsonTexto();
   }
-
   function limparForm() {
-    editId = null;
-    g('av-titulo').value = ''; g('av-texto').value = ''; g('av-data').value = hoje();
-    g('av-add').textContent = 'Adicionar';
-    g('av-cancel').hidden = true;
-    g('av-form-titulo').textContent = '2. Nova notificação';
+    editId = null; g('av-titulo').value = ''; g('av-texto').value = ''; g('av-data').value = hoje();
+    g('av-add').textContent = 'Adicionar'; g('av-cancel').hidden = true; g('av-form-titulo').textContent = '2. Nova notificação';
   }
   function iniciarEdicao(id) {
-    const a = lista.find(x => x.id === id);
-    if (!a) return;
-    editId = id;
-    g('av-titulo').value = a.titulo; g('av-texto').value = a.mensagem; g('av-data').value = a.data;
-    g('av-add').textContent = 'Salvar alterações';
-    g('av-cancel').hidden = false;
-    g('av-form-titulo').textContent = '2. Editando #' + id;
-    desenhar();
-    g('av-titulo').focus();
+    const a = lista.find(x => x.id === id); if (!a) return;
+    editId = id; g('av-titulo').value = a.titulo; g('av-texto').value = a.mensagem; g('av-data').value = a.data;
+    g('av-add').textContent = 'Salvar alterações'; g('av-cancel').hidden = false; g('av-form-titulo').textContent = '2. Editando #' + id;
+    desenhar(); g('av-titulo').focus();
   }
   function apagar(id) {
     const a = lista.find(x => x.id === id);
     if (!a || !confirm('Apagar a notificação "' + (a.titulo || '#' + id) + '"?')) return;
     lista = lista.filter(x => x.id !== id);
     if (editId === id) limparForm();
-    guardar(); desenhar();
-    msg('av-msg2', 'Apagada. Lembre de levar o JSON novo para o site.', 'ok');
+    guardar(); desenhar(); msg('av-msg2', 'Apagada. Lembre de levar o JSON novo para o site.', 'ok');
   }
-
   g('av-add').addEventListener('click', () => {
-    const titulo = g('av-titulo').value.trim();
-    const mensagem = g('av-texto').value.trim();
-    const data = g('av-data').value.trim();
+    const titulo = g('av-titulo').value.trim(), mensagem = g('av-texto').value.trim(), data = g('av-data').value.trim();
     if (!titulo && !mensagem) { msg('av-msg2', 'Escreva pelo menos o título ou a mensagem.', 'err'); return; }
     const editou = editId != null;
-    if (editou) {
-      const a = lista.find(x => x.id === editId);
-      if (a) { a.titulo = titulo; a.mensagem = mensagem; a.data = data; }
-    } else {
-      lista.push({ id: proximoId(), titulo, mensagem, data });
-    }
-    lista = normalizar(lista);
-    limparForm(); guardar(); desenhar();
+    if (editou) { const a = lista.find(x => x.id === editId); if (a) { a.titulo = titulo; a.mensagem = mensagem; a.data = data; } }
+    else lista.push({ id: proximoId(), titulo, mensagem, data });
+    lista = normalizar(lista); limparForm(); guardar(); desenhar();
     msg('av-msg2', (editou ? 'Alterações salvas.' : 'Adicionada com o número novo.') + ' Agora copie o JSON e cole no GitHub.', 'ok');
   });
   g('av-cancel').addEventListener('click', () => { limparForm(); desenhar(); });
-
+  const aplicar = (arr, texto) => { lista = normalizar(arr); limparForm(); guardar(); desenhar(); return texto; };
   g('av-load').addEventListener('click', async () => {
-    const url = g('av-url').value.trim();
-    if (!url) return;
+    const url = g('av-url').value.trim(); if (!url) return;
     if (lista.length && !confirm('Isso troca a lista atual pelo que está no site. Continuar?')) return;
     msg('av-msg', 'Carregando…');
     try {
       const r = await fetch(url + (url.includes('?') ? '&' : '?') + 't=' + Date.now(), { cache: 'no-store' });
       if (!r.ok) throw new Error('HTTP ' + r.status);
-      const d = await r.json();
-      if (!d || !Array.isArray(d.avisos)) throw new Error('formato');
-      lista = normalizar(d.avisos);
-      limparForm(); guardar(); desenhar();
-      msg('av-msg', lista.length + ' notificação(ões) carregada(s) do site.', 'ok');
-    } catch (e) {
-      msg('av-msg', 'Não consegui carregar. Cole o JSON na caixa do passo 3 e toque em "Importar texto colado".', 'err');
-    }
+      const d = await r.json(); if (!d || !Array.isArray(d.avisos)) throw new Error('formato');
+      aplicar(d.avisos); msg('av-msg', lista.length + ' notificação(ões) carregada(s) do site.', 'ok');
+    } catch (e) { msg('av-msg', 'Não consegui carregar. Cole o JSON na caixa do passo 3 e toque em "Importar texto colado".', 'err'); }
   });
-
   g('av-from-tab').addEventListener('click', () => {
     const texto = g('json-code').value.trim();
     if (!texto) { msg('av-msg', 'A aba JSON está vazia. Carregue um arquivo .json nela primeiro.', 'err'); return; }
     try {
-      const d = JSON.parse(texto);
-      if (!d || !Array.isArray(d.avisos)) throw new Error('formato');
+      const d = JSON.parse(texto); if (!d || !Array.isArray(d.avisos)) throw new Error('formato');
       if (lista.length && !confirm('Isso troca a lista atual pelo que está na aba JSON. Continuar?')) return;
-      lista = normalizar(d.avisos);
-      limparForm(); guardar(); desenhar();
-      msg('av-msg', lista.length + ' notificação(ões) pegas da aba JSON.', 'ok');
-    } catch (e) {
-      msg('av-msg', 'A aba JSON não tem um avisos.json válido. Ele precisa ter { "avisos": [ ... ] }.', 'err');
-    }
+      aplicar(d.avisos); msg('av-msg', lista.length + ' notificação(ões) pegas da aba JSON.', 'ok');
+    } catch (e) { msg('av-msg', 'A aba JSON não tem um avisos.json válido. Ele precisa ter { "avisos": [ ... ] }.', 'err'); }
   });
-
   g('av-to-tab').addEventListener('click', () => {
     const ta = g('json-code');
     if (ta.value.trim() && !confirm('Isso troca o que está na aba JSON pelas notificações da lista. Continuar?')) return;
-    ta.value = jsonTexto();
-    ta.dispatchEvent(new Event('input'));
-    msg('av-msg2', 'Enviado para a aba JSON.', 'ok');
+    ta.value = jsonTexto(); ta.dispatchEvent(new Event('input')); msg('av-msg2', 'Enviado para a aba JSON.', 'ok');
   });
-
   g('av-import').addEventListener('click', () => {
     try {
-      const d = JSON.parse(g('av-json').value);
-      if (!d || !Array.isArray(d.avisos)) throw new Error('formato');
-      lista = normalizar(d.avisos);
-      limparForm(); guardar(); desenhar();
-      msg('av-msg2', lista.length + ' notificação(ões) importada(s).', 'ok');
-    } catch (e) {
-      msg('av-msg2', 'O texto não é um avisos.json válido. Ele precisa ter { "avisos": [ ... ] }.', 'err');
-    }
+      const d = JSON.parse(g('av-json').value); if (!d || !Array.isArray(d.avisos)) throw new Error('formato');
+      aplicar(d.avisos); msg('av-msg2', lista.length + ' notificação(ões) importada(s).', 'ok');
+    } catch (e) { msg('av-msg2', 'O texto não é um avisos.json válido. Ele precisa ter { "avisos": [ ... ] }.', 'err'); }
   });
-
   g('av-copy').addEventListener('click', async () => {
     const texto = jsonTexto();
-    try {
-      await navigator.clipboard.writeText(texto);
-      msg('av-msg2', 'JSON copiado! Cole no avisos.json do GitHub.', 'ok');
-    } catch (e) {
-      const ta = g('av-json');
-      ta.value = texto; ta.focus(); ta.select();
-      let ok = false;
-      try { ok = document.execCommand('copy'); } catch (e2) {}
+    try { await navigator.clipboard.writeText(texto); msg('av-msg2', 'JSON copiado! Cole no avisos.json do GitHub.', 'ok'); }
+    catch (e) {
+      const ta = g('av-json'); ta.value = texto; ta.focus(); ta.select();
+      let ok = false; try { ok = document.execCommand('copy'); } catch (e2) {}
       msg('av-msg2', ok ? 'JSON copiado! Cole no avisos.json do GitHub.' : 'Não deu para copiar sozinho. Segure o texto, selecione tudo e copie.', ok ? 'ok' : 'err');
     }
   });
-
   g('av-download').addEventListener('click', () => {
-    const blob = new Blob([jsonTexto()], { type: 'application/json' });
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'avisos.json';
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    a.href = URL.createObjectURL(new Blob([jsonTexto()], { type: 'application/json' })); a.download = 'avisos.json';
+    document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
     msg('av-msg2', 'Arquivo baixado. Envie ele no GitHub (Add file → Upload files).', 'ok');
   });
-
-  function abrir() {
-    modal.hidden = false;
-    msg('av-msg', ''); msg('av-msg2', '');
-    if (!g('av-data').value) g('av-data').value = hoje();
-    desenhar();
-  }
-  function fechar() { modal.hidden = true; }
+  function abrir() { modal.hidden = false; msg('av-msg', ''); msg('av-msg2', ''); if (!g('av-data').value) g('av-data').value = hoje(); desenhar(); }
+  const fechar = () => { modal.hidden = true; };
   g('avisos-btn').addEventListener('click', abrir);
   g('av-close').addEventListener('click', fechar);
   modal.addEventListener('click', e => { if (e.target === modal) fechar(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && !modal.hidden) fechar(); });
-
-  carregarLocal();
-  limparForm();
-  desenhar();
+  limparForm(); desenhar();
 })();
 </script>
 </body>
