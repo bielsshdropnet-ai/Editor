@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-theme="dark">
+<html lang="pt-BR" data-theme="dark" translate="no">
 <head>
 <meta charset="UTF-8">
+<meta name="google" content="notranslate">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Editor HTML / CSS / JS / JSON</title>
 <style>
@@ -303,16 +304,22 @@ const RULES = {
     { cls: 'cm-number', re: /\b\d+\.?\d*\b/ }, { cls: 'cm-func', re: /[a-zA-Z_$][\w$]*(?=\()/ },
   ],
 };
-const RX = {};
-Object.keys(RULES).forEach(l => { RX[l] = new RegExp(RULES[l].map(r => '(' + r.re.source + ')').join('|'), 'g'); });
+const RX = {}, RG = {};
+Object.keys(RULES).forEach(l => {
+  let idx = 1; RG[l] = [];
+  RX[l] = new RegExp(RULES[l].map(r => {
+    RG[l].push(idx);
+    idx += 1 + (new RegExp(r.re.source + '|').exec('').length - 1);
+    return '(' + r.re.source + ')';
+  }).join('|'), 'g');
+});
 function highlight(lang, text) {
   const rx = RX[lang]; rx.lastIndex = 0;
   let out = '', last = 0, m;
   while ((m = rx.exec(text))) {
     if (m.index > last) out += esc(text.slice(last, m.index));
-    let gi = -1;
-    for (let i = 1; i < m.length; i++) if (m[i] !== undefined) { gi = i - 1; break; }
-    out += `<span class="${RULES[lang][gi].cls}">` + esc(m[0]) + '</span>';
+    const gi = RG[lang].findIndex(g => m[g] !== undefined);
+    out += gi < 0 ? esc(m[0]) : `<span class="${RULES[lang][gi].cls}">` + esc(m[0]) + '</span>';
     last = rx.lastIndex;
     if (m[0] === '') rx.lastIndex++;
   }
@@ -341,7 +348,7 @@ function paint() {
         });
         E[t].mir.innerHTML = html + esc(text.slice(last)) + '\n ';
       }
-    } else E[t].mir.innerHTML = highlight(t, text) + '\n ';
+    } else E[t].mir.innerHTML = (() => { try { return highlight(t, text); } catch (e) { return esc(text); } })() + '\n ';
     E[t].mir.scrollTop = E[t].ta.scrollTop; E[t].mir.scrollLeft = E[t].ta.scrollLeft;
   });
 }
